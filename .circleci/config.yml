@@ -7,7 +7,7 @@ jobs:
     docker:
       # specify the version
       - image: circleci/golang:1.11.1
-    working_directory: /go/src/github.com/Kasita-Inc/quimby
+    working_directory: /go/src/gitlab.com/beacon-software/quimby
     steps:
       - checkout
 

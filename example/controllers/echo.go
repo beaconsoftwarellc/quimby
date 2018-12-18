@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Kasita-Inc/gadget/stringutil"
-	"github.com/Kasita-Inc/quimby/controllers"
-	qerror "github.com/Kasita-Inc/quimby/error"
-	qhttp "github.com/Kasita-Inc/quimby/http"
+	"gitlab.com/beacon-software/gadget/stringutil"
+	"gitlab.com/beacon-software/quimby/controllers"
+	qerror "gitlab.com/beacon-software/quimby/error"
+	qhttp "gitlab.com/beacon-software/quimby/http"
 )
 
 // EchoController is a debugging tool for echo'ing back the request sent in

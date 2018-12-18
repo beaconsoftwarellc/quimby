@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Kasita-Inc/gadget/stringutil"
+	"gitlab.com/beacon-software/gadget/stringutil"
 )
 
 // WildCard character for paths.

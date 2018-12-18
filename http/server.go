@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kasita-Inc/gadget/log"
-	qerror "github.com/Kasita-Inc/quimby/error"
+	"gitlab.com/beacon-software/gadget/log"
+	qerror "gitlab.com/beacon-software/quimby/error"
 )
 
 const healthCheckURI = "/" + HealthCheckRoute

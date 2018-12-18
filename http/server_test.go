@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/Kasita-Inc/gadget/stringutil"
-	qerror "github.com/Kasita-Inc/quimby/error"
+	"gitlab.com/beacon-software/gadget/stringutil"
+	qerror "gitlab.com/beacon-software/quimby/error"
 )
 
 /******************************************************

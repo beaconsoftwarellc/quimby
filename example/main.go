@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	qcontrollers "github.com/Kasita-Inc/quimby/controllers"
-	"github.com/Kasita-Inc/quimby/example/controllers"
-	"github.com/Kasita-Inc/quimby/http"
+	qcontrollers "gitlab.com/beacon-software/quimby/controllers"
+	"gitlab.com/beacon-software/quimby/example/controllers"
+	"gitlab.com/beacon-software/quimby/http"
 )
 
 func main() {
