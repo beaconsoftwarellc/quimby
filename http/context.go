@@ -10,10 +10,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/Kasita-Inc/gadget/errors"
-	"github.com/Kasita-Inc/gadget/log"
-	"github.com/Kasita-Inc/gadget/stringutil"
-	qerror "github.com/Kasita-Inc/quimby/error"
+	"gitlab.com/beacon-software/gadget/errors"
+	"gitlab.com/beacon-software/gadget/log"
+	"gitlab.com/beacon-software/gadget/stringutil"
+	qerror "gitlab.com/beacon-software/quimby/error"
 )
 
 // NoContentError is returned when Read is called and the Request has a 0

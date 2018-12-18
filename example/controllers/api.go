@@ -7,11 +7,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Kasita-Inc/gadget/generator"
-	"github.com/Kasita-Inc/gadget/stringutil"
-	"github.com/Kasita-Inc/quimby/controllers"
-	qerror "github.com/Kasita-Inc/quimby/error"
-	qhttp "github.com/Kasita-Inc/quimby/http"
+	"gitlab.com/beacon-software/gadget/generator"
+	"gitlab.com/beacon-software/gadget/stringutil"
+	"gitlab.com/beacon-software/quimby/controllers"
+	qerror "gitlab.com/beacon-software/quimby/error"
+	qhttp "gitlab.com/beacon-software/quimby/http"
 )
 
 // WidgetStorage is a simple in-memory map for widgets

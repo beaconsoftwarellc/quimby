@@ -1,6 +1,6 @@
-package: github.com/Kasita-Inc/quimby
+package: gitlab.com/beacon-software/quimby
 import:
-- package: github.com/Kasita-Inc/gadget
+- package: gitlab.com/beacon-software/gadget
   subpackages:
   - errors
   - generator

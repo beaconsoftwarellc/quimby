@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 
-	"github.com/Kasita-Inc/quimby/controllers"
-	"github.com/Kasita-Inc/quimby/http"
+	"gitlab.com/beacon-software/quimby/controllers"
+	"gitlab.com/beacon-software/quimby/http"
 )
 
 // ResourceController is a sample controller implementation

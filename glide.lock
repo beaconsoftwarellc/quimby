@@ -11,7 +11,7 @@ imports:
   - ptypes/timestamp
 - name: github.com/google/uuid
   version: d460ce9f8df2e77fb1ba55ca87fafed96c607494
-- name: github.com/Kasita-Inc/gadget
+- name: gitlab.com/beacon-software/gadget
   version: 995541877f460be1c9cb3329b7fbadeaeb23a102
   subpackages:
   - collection
