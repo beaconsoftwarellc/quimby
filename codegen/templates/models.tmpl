@@ -1,0 +1,27 @@
+package models
+
+// THIS IS A GENERATED FILE. DO NOT MODIFY
+// api_models.tmpl
+
+import (
+	"time"
+)
+
+{{range .Models}}
+{{if not .Fields -}}// {{.Name}} {{.Description}}
+type {{.Name}} map[string]interface{} {{else}}
+// {{.Name}} {{.Description}}
+type {{.Name}} struct {
+	{{range .Fields}}{{.Name}} {{.Type}} `json:"{{.JSON}}"`
+	{{end}}
+}
+{{end}}{{end}}
+
+
+{{ range $index, $name := .Collections }}
+// {{$name}}Collection is a paginated collection of {{$name}} models
+type {{$name}}Collection struct {
+	Collection
+	Items []*{{$name}} `json:"items"`
+}
+{{end}}

@@ -1,0 +1,183 @@
+package controllers
+
+// THIS IS A GENERATED FILE. DO NOT MODIFY
+// api_docs.tmpl
+
+const htmlDocs = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <h2>Endpoints</h2>
+		{{ $definition := . }}
+	  {{ range $index, $controller := .Controllers }}
+	  {{ range .Actions }}
+	  <div class="panel panel-{{ .PanelCode }}">
+		  <div class="panel-heading">
+			<div class="container">
+			  <div class="col-sm-1"><b>{{ .Method }}</b></div>
+			  <div class="col-sm-10">/{{ $controller.DefaultRoute }}</div>
+			  <div class="col-sm-1"><span data-toggle="collapse" data-target="#{{$controller.Name}}{{.Method}}Info"><span class="glyphicon glyphicon-{{if $controller.HasAuth}}lock{{else}}unchecked{{end}}"></span></span></div>
+			</div><!-- .container -->
+		  </div>
+		  <div class="panel-body collapse" id="{{$controller.Name}}{{.Method}}Info">
+			  <p>{{ .Description }}</p>
+			  <h5>Headers</h5>
+			  <table class="table">
+				<thead>
+				  <tr>
+				    <th class="col-sm-3">Name</th>
+				    <th class="col-sm-9">Description</th>
+				  </tr>
+				</thead>
+				<tbody>{{ range $controller.AuthHeaders }}
+				  <tr>
+				    <td class="col-sm-3">{{.Name}}</td>
+				    <td class="col-sm-9">{{.Type}}</td>
+				  </tr>{{ end }}
+				</tbody>
+			  </table>
+				{{ if $controller.Parameters -}}
+			  <h5>URI Parameters</h5>
+			  <table class="table">
+				<thead>
+				  <tr>
+				    <th class="col-sm-3">Name</th>
+				    <th class="col-sm-9">Description</th>
+				  </tr>
+				</thead>
+				<tbody>{{ range $controller.Parameters }}
+				  <tr>
+				    <td class="col-sm-3">{{ .Name }}</td>
+				    <td class="col-sm-9">{{ .Type }}</td>
+				  </tr>{{ end }}</tbody></table>{{ end }}
+				{{ if .Parameters -}}
+			  <h5>Query Parameters</h5>
+			  <table class="table">
+				<thead>
+				  <tr>
+				    <th class="col-sm-3">Name</th>
+				    <th class="col-sm-9">Description</th>
+				  </tr>
+				</thead>
+				  {{ range .QueryParameters $definition }}
+  				  <tr>
+  				    <td class="col-sm-3">{{ .QueryName }}</td>
+  				    <td class="col-sm-9">{{ .QueryType }}</td>
+  				  </tr>{{ end }}</tbody></table>{{ end }}
+				{{ if .Model -}}
+				<h5>Body</h5>
+			  <table class="table">
+				<thead>
+				  <tr>
+				    <th class="col-sm-3">Name</th>
+				    <th class="col-sm-9"></th>
+				  </tr>
+				</thead>
+				<tbody>
+					<tr>
+  				    <td class="col-sm-3"><a href="#{{.Model}}Model">{{ .Model }}</a></td>
+  				    <td class="col-sm-9"></td>
+					</tr>
+				</tbody>
+			  </table>{{ end }}
+			  <h5>Response</h5>
+			  <table class="table">
+				<thead>
+				  <tr>
+				    <th class="col-sm-3">Code</th>
+				    <th class="col-sm-9">Model</th>
+				  </tr>
+				</thead>
+				<tbody>
+				  <tr>
+				    <td class="col-sm-3">{{.StatusCode}}</td>
+				    <td class="col-sm-9"><a href="#{{.Return}}Model" data-toggle="collapse" data-target="#{{.Return}}ModelInfo">{{.Return}}</a></td>
+				  </tr>
+				</tbody>
+			  </table>
+		  </div><!-- #{{$controller.Name}}{{.Method}}Info -->
+      </div><!-- .panel -->{{ end }}{{ end }}
+    </div><!-- .container -->
+
+    <div class="container">
+	  <h2>Models</h2>
+	  {{ range .Models }}
+	  <div class="panel panel-default" id="{{.Name}}Model">
+		<div class="panel-heading">
+          <div class="container">
+            <div class="col-sm-11">{{.Name}}</div>
+			<div class="col-sm-1"><span data-toggle="collapse" data-target="#{{.Name}}ModelInfo"><span class="glyphicon glyphicon-sort"></span></span></div>
+          </div>
+        </div>
+		<div class="panel-body collapse" id="{{.Name}}ModelInfo">
+		  <p>{{ .Description }}</p>
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="col-sm-3">Name</th>
+                <th class="col-sm-9">Type</th>
+              </tr>
+            </thead>
+            <tbody>{{ range .Fields }}
+              <tr>
+                <td class="col-sm-3">{{ .JSON }}</td>
+                <td class="col-sm-9">{{ .JSONType }}</td>
+			  </tr>{{end}}
+			</tbody>
+          </table>
+	    </div><!-- #{{.Name}}ModelInfo -->
+	  </div><!-- #{{.Name}}Model -->{{ end }}
+      {{ range $index, $name := .Collections }}
+	  <div class="panel panel-default" id="{{$name}}CollectionModel">
+		<div class="panel-heading">
+          <div class="container">
+            <div class="col-sm-11">{{$name}}Collection</div>
+			<div class="col-sm-1"><span data-toggle="collapse" data-target="#{{$name}}CollectionModelInfo"><span class="glyphicon glyphicon-sort"></span></span></div>
+          </div>
+        </div>
+		<div class="panel-body collapse" id="{{$name}}CollectionModelInfo">
+		  <p>{{$name}}Collection is a paginated collection of {{$name}} models</p>
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="col-sm-3">Name</th>
+                <th class="col-sm-9">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="col-sm-3">next</td>
+                <td class="col-sm-9">string</td>
+              </tr>
+              <tr>
+                <td class="col-sm-3">previous</td>
+                <td class="col-sm-9">string</td>
+              </tr>
+              <tr>
+                <td class="col-sm-3">uri</td>
+                <td class="col-sm-9">string</td>
+			  </tr>
+              <tr>
+                <td class="col-sm-3">items</td>
+                <td class="col-sm-9"><a href="#{{$name}}Model">[]{{$name}}</a></td>
+              </tr>
+			</tbody>
+          </table>
+	    </div><!-- #{{$name}}CollectionModelInfo -->
+	  </div><!-- #{{$name}}CollectionModel -->{{ end }}
+  </div><!-- .contrainer -->
+
+	<!-- Optional JavaScript -->
+	<!-- jQuery first, then Bootstrap JS -->
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </body>
+</html>`
