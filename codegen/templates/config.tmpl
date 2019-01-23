@@ -1,7 +1,7 @@
 package config
 
 // THIS IS A GENERATED FILE. DO NOT MODIFY
-// api_config.tmpl
+// config.tmpl
 
 import (
 	"gitlab.com/beacon-software/gadget/environment"

@@ -12,6 +12,16 @@ Specification:
       Type: storage.WidgetStorage
       Initializer: storage.NewWidgetStorage()
 Controllers:
+  - Name: Echo
+    Description: is a debugging tool for echo'ing back the request sent in as the body of the response
+    Routes:
+      - echo
+      - echo/{{toEcho}}
+  - Name: Resource
+    Description: is a is a sample controller implementation
+    Routes:
+      - resource/{{id}}
+      - resource/{{id}}/{{subresource}}
   - Name: Widgets
     Description: handles List and Create functions for the Widget Collection
     Auth:

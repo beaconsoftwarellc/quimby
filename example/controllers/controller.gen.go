@@ -1,6 +1,7 @@
 package controllers
 
 // THIS IS A GENERATED FILE. DO NOT MODIFY
+// controller.tmpl
 
 import (
 	"fmt"
@@ -15,6 +16,60 @@ import (
 	"gitlab.com/beacon-software/quimby/example/models"
 	"gitlab.com/beacon-software/quimby/example/security"
 )
+
+// EchoController is a debugging tool for echo'ing back the request sent in as the body of the response
+type EchoController interface {
+	qhttp.Controller
+}
+
+type echoController struct {
+	qcontrollers.MethodNotAllowedController
+	qcontrollers.NoAuthenticationController
+	Specification *config.Specification
+}
+
+// NewEchoController returns an initialized EchoController
+func NewEchoController(spec *config.Specification) EchoController {
+	controller := &echoController{}
+	controller.Specification = spec
+
+	return controller
+}
+
+// GetRoutes establishes routes for the EchoController
+func (controller *echoController) GetRoutes() []string {
+	return []string{
+		"echo",
+		"echo/{{toEcho}}",
+	}
+}
+
+// ResourceController is a is a sample controller implementation
+type ResourceController interface {
+	qhttp.Controller
+}
+
+type resourceController struct {
+	qcontrollers.MethodNotAllowedController
+	qcontrollers.NoAuthenticationController
+	Specification *config.Specification
+}
+
+// NewResourceController returns an initialized ResourceController
+func NewResourceController(spec *config.Specification) ResourceController {
+	controller := &resourceController{}
+	controller.Specification = spec
+
+	return controller
+}
+
+// GetRoutes establishes routes for the ResourceController
+func (controller *resourceController) GetRoutes() []string {
+	return []string{
+		"resource/{{id}}",
+		"resource/{{id}}/{{subresource}}",
+	}
+}
 
 // WidgetsController handles List and Create functions for the Widget Collection
 type WidgetsController interface {

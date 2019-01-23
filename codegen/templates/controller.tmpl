@@ -1,6 +1,7 @@
 package controllers
 
 // THIS IS A GENERATED FILE. DO NOT MODIFY
+// controller.tmpl
 
 import (
 	qcontrollers "gitlab.com/beacon-software/quimby/controllers"
@@ -20,7 +21,6 @@ type {{$controller.Name}}Controller interface {
 	{{ range .Actions }}do{{.Method}}(context *qhttp.Context, {{.ArgumentDefinition $controller}}) {{.ReturnDefinition}}
 	{{end}}
 }
-
 
 type {{$controller.ImplName}}Controller struct {
 	{{$controller.Security}}

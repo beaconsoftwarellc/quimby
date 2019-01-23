@@ -1,6 +1,7 @@
 package main
 
 // THIS IS A GENERATED FILE. DO NOT MODIFY
+// main.tmpl
 
 import (
 	"fmt"
@@ -24,6 +25,8 @@ func main() {
 	server.Router.AddController(&qcontrollers.HealthCheckController{})
 	server.Router.AddController(controllers.NewDocController(specification))
 
+	server.Router.AddController(controllers.NewEchoController(specification))
+	server.Router.AddController(controllers.NewResourceController(specification))
 	server.Router.AddController(controllers.NewWidgetsController(specification))
 	server.Router.AddController(controllers.NewWidgetController(specification))
 

@@ -1,7 +1,7 @@
 package models
 
 // THIS IS A GENERATED FILE. DO NOT MODIFY
-// api_models.tmpl
+// models.tmpl
 
 import (
 	"time"
