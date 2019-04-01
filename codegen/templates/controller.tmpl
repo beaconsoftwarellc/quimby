@@ -1,0 +1,69 @@
+package controllers
+
+// THIS IS A GENERATED FILE. DO NOT MODIFY
+// controller.tmpl
+
+import (
+	qcontrollers "gitlab.com/beacon-software/quimby/controllers"
+	qerror "gitlab.com/beacon-software/quimby/error"
+	qhttp "gitlab.com/beacon-software/quimby/http"
+	"gitlab.com/beacon-software/gadget/errors"
+
+	"{{.BasePath}}/models"
+	"{{.BasePath}}/config"
+	"{{.BasePath}}/security"
+)
+
+{{ range $index, $controller := .Controllers }}
+// {{$controller.Name}}Controller {{$controller.Description}}
+type {{$controller.Name}}Controller interface {
+	qhttp.Controller
+	{{ range .Actions }}do{{.Method}}(context *qhttp.Context, {{.ArgumentDefinition $controller}}) {{.ReturnDefinition}}
+	{{end}}
+}
+
+type {{$controller.ImplName}}Controller struct {
+	{{$controller.Security}}
+	Specification *config.Specification
+}
+
+// New{{$controller.Name}}Controller returns an initialized {{$controller.Name}}Controller
+func New{{$controller.Name}}Controller(spec *config.Specification) {{$controller.Name}}Controller {
+	controller := &{{$controller.ImplName}}Controller{}
+	controller.Specification = spec
+	{{if $controller.Auth}}controller.Validator = {{$controller.Auth.Validator}}{{end}}
+	return controller
+}
+
+// GetRoutes establishes routes for the {{$controller.Name}}Controller
+func (controller *{{$controller.ImplName}}Controller) GetRoutes() []string {
+	return []string{
+        {{ range $i, $route := $controller.Routes }}"{{$route}}",
+        {{end}}
+	}
+}
+
+{{ range .Actions }}
+// {{.Method}} {{.Description}}
+func (controller *{{$controller.ImplName}}Controller) {{.Method}}(context *qhttp.Context) {
+	{{ $controller.LoadAuth }}
+	{{ .ReadRequestModel -}}
+	{{ .ReadQueryModel -}}
+	{{ if .Return }}resp, err := controller.do{{.Method}}(context, {{.Arguments $controller}})
+	if nil != err {
+		qerror.TranslateError(context, err)
+		{{.ErrorLog}}
+		return
+	}
+	context.SetResponse(resp, {{.Status}}){{else}}
+	err := controller.do{{.Method}}(context, {{.Arguments $controller}})
+	if nil != err {
+		qerror.TranslateError(context, err)
+		{{.ErrorLog}}
+		return
+	}
+	context.SetResponse(nil, {{.Status}}){{end}}
+}
+{{end}}
+
+{{ end }}

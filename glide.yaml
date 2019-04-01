@@ -6,6 +6,8 @@ import:
   - generator
   - log
   - stringutil
+- package: gitlab.com/beacon-software/go-embed
+  repo: git@gitlab.com:beacon-software/go-embed.git
 testImport:
 - package: github.com/stretchr/testify
   version: v1.2.2

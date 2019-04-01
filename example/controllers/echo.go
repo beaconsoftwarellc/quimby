@@ -5,28 +5,11 @@ import (
 	"net/http"
 
 	"gitlab.com/beacon-software/gadget/stringutil"
-	"gitlab.com/beacon-software/quimby/controllers"
 	qerror "gitlab.com/beacon-software/quimby/error"
 	qhttp "gitlab.com/beacon-software/quimby/http"
 )
 
-// EchoController is a debugging tool for echo'ing back the request sent in
-// as the body of the response.
-type EchoController struct {
-	controllers.MethodNotAllowedController
-	controllers.NoAuthenticationController
-}
-
-// GetRoutes returns the single route 'echo'
-func (controller *EchoController) GetRoutes() []string {
-	return []string{
-		"echo",
-		"echo/{{toEcho}}",
-	}
-}
-
-// Get writes the information from the request to the body of the response.
-func (controller *EchoController) Get(context *qhttp.Context) {
+func (controller *echoController) Get(context *qhttp.Context) {
 	r := context.Request
 	context.Write(fmt.Sprintf("Host: %s\n", r.Host))
 	context.Write(fmt.Sprintf("RequestURI: %s\n", r.RequestURI))
@@ -55,16 +38,16 @@ func (controller *EchoController) Get(context *qhttp.Context) {
 }
 
 // Post writes the information from the request to the body of the response.
-func (controller *EchoController) Post(context *qhttp.Context) {
+func (controller *echoController) Post(context *qhttp.Context) {
 	controller.Get(context)
 }
 
 // Put writes the information from the request to the body of the response.
-func (controller *EchoController) Put(context *qhttp.Context) {
+func (controller *echoController) Put(context *qhttp.Context) {
 	controller.Get(context)
 }
 
 // Delete writes the information from the request to the body of the response.
-func (controller *EchoController) Delete(context *qhttp.Context) {
+func (controller *echoController) Delete(context *qhttp.Context) {
 	controller.Get(context)
 }
