@@ -4,9 +4,9 @@ package config
 // config.tmpl
 
 import (
-	"gitlab.com/beacon-software/gadget/environment"
-	"gitlab.com/beacon-software/gadget/log"
-	"gitlab.com/beacon-software/quimby/example/storage"
+	"github.com/beaconsoftwarellc/gadget/environment"
+	"github.com/beaconsoftwarellc/gadget/log"
+	"github.com/beaconsoftwarellc/quimby/example/storage"
 )
 
 // Specification details the expected values for the config

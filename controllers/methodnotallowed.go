@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	qerror "gitlab.com/beacon-software/quimby/error"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	qerror "github.com/beaconsoftwarellc/quimby/error"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 )
 
 // MethodNotAllowedController serves as a base for controllers that do not

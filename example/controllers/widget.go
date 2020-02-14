@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"gitlab.com/beacon-software/gadget/errors"
-	"gitlab.com/beacon-software/quimby/example/models"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	"github.com/beaconsoftwarellc/gadget/errors"
+	"github.com/beaconsoftwarellc/quimby/example/models"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 )
 
 func (controller *widgetsController) doGet(context *qhttp.Context, username string, password string) (*models.WidgetCollection, errors.TracerError) {

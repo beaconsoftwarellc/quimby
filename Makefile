@@ -1,32 +1,32 @@
-setup:
-	go get -u github.com/Masterminds/glide
-	go install github.com/Masterminds/glide
-	go get -u -f gitlab.com/beacon-software/go-embed
-	go install gitlab.com/beacon-software/go-embed
-	go get -u -f golang.org/x/tools/cmd/goimports
-	go install golang.org/x/tools/cmd/goimports
+.PHONY: help unit dist install
 
-update: setup
-	glide cc
-	glide update --strip-vendor
+SRC_FILES := $(shell find . -iname "*.go" )
 
-get: setup
-	glide install --strip-vendor
+all: unit
 
-test: get
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  unit                    run unit tests"
+	@echo "  dist                    build artifacts for the local and production architectures"
+	@echo "  install                 install artifact on local path"
+	@exit 1
+
+unit:
+	@echo "go test package"
+	go mod tidy
 	go test -cover -p 1 ./...
 
-tools: setup
+tools:
 	go generate ./codegen
 	go install ./codegen
 
-gen: setup tools _gen fmt
+gen: tools _gen fmt
 
 _gen:
 	go generate ./...
 
-fmt: setup
-	goimports -local gitlab.com/beacon-software/ -w .
+fmt:
+	goimports -local github.com/beaconsoftwarellc/ -w .
 
 example: gen
 	go run example/main.gen.go

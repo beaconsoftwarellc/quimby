@@ -1,5 +1,5 @@
 Name: ExampleGateway
-BasePath: gitlab.com/beacon-software/quimby/example
+BasePath: github.com/beaconsoftwarellc/quimby/example
 Specification:
   Environment:
     - Name: Port

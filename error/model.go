@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/beacon-software/gadget/errors"
+	"github.com/beaconsoftwarellc/gadget/errors"
 )
 
 // RestError represents the standard error returned by the API Gateway

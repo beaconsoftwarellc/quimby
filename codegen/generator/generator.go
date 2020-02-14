@@ -10,10 +10,10 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"gitlab.com/beacon-software/gadget/fileutil"
-	"gitlab.com/beacon-software/gadget/log"
-	"gitlab.com/beacon-software/gadget/stringutil"
-	"gitlab.com/beacon-software/quimby/codegen/templates"
+	"github.com/beaconsoftwarellc/gadget/fileutil"
+	"github.com/beaconsoftwarellc/gadget/log"
+	"github.com/beaconsoftwarellc/gadget/stringutil"
+	"github.com/beaconsoftwarellc/quimby/codegen/templates"
 )
 
 const (

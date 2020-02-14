@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/beacon-software/gadget/errors"
-	qcontrollers "gitlab.com/beacon-software/quimby/controllers"
-	qerror "gitlab.com/beacon-software/quimby/error"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	"github.com/beaconsoftwarellc/gadget/errors"
+	qcontrollers "github.com/beaconsoftwarellc/quimby/controllers"
+	qerror "github.com/beaconsoftwarellc/quimby/error"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 
-	"gitlab.com/beacon-software/quimby/example/config"
-	"gitlab.com/beacon-software/quimby/example/models"
-	"gitlab.com/beacon-software/quimby/example/security"
+	"github.com/beaconsoftwarellc/quimby/example/config"
+	"github.com/beaconsoftwarellc/quimby/example/models"
+	"github.com/beaconsoftwarellc/quimby/example/security"
 )
 
 // EchoController is a debugging tool for echo'ing back the request sent in as the body of the response

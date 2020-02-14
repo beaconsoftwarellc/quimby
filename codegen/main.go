@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"gitlab.com/beacon-software/gadget/stringutil"
-	"gitlab.com/beacon-software/quimby/codegen/generator"
+	"github.com/beaconsoftwarellc/gadget/stringutil"
+	"github.com/beaconsoftwarellc/quimby/codegen/generator"
 )
 
 //go:generate go-embed template templates templates/templates.go

@@ -3,8 +3,8 @@ package models
 import (
 	"strings"
 
-	"gitlab.com/beacon-software/gadget/errors"
-	"gitlab.com/beacon-software/gadget/stringutil"
+	"github.com/beaconsoftwarellc/gadget/errors"
+	"github.com/beaconsoftwarellc/gadget/stringutil"
 )
 
 func issuesToError(issues []string) errors.TracerError {

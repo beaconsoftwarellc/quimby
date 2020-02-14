@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/beacon-software/gadget/stringutil"
-	qerror "gitlab.com/beacon-software/quimby/error"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	"github.com/beaconsoftwarellc/gadget/stringutil"
+	qerror "github.com/beaconsoftwarellc/quimby/error"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 )
 
 func (controller *echoController) Get(context *qhttp.Context) {

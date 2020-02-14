@@ -1,6 +1,6 @@
 package controllers
 
-import qhttp "gitlab.com/beacon-software/quimby/http"
+import qhttp "github.com/beaconsoftwarellc/quimby/http"
 
 // NoAuthenticationController serves as a base for controllers that do not
 // implement authentication.

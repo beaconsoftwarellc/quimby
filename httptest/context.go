@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"gitlab.com/beacon-software/quimby/controllers"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/controllers"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 )
 
 /******************************************************

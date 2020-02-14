@@ -1,8 +1,8 @@
 package security
 
 import (
-	qcontrollers "gitlab.com/beacon-software/quimby/controllers"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	qcontrollers "github.com/beaconsoftwarellc/quimby/controllers"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 )
 
 type basicValidator struct{}

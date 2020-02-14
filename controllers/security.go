@@ -1,6 +1,6 @@
 package controllers
 
-import qhttp "gitlab.com/beacon-software/quimby/http"
+import qhttp "github.com/beaconsoftwarellc/quimby/http"
 
 // BasicAuthValidator handles verification of Username/Password
 type BasicAuthValidator interface {

@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/beacon-software/gadget/errors"
-	"gitlab.com/beacon-software/gadget/generator"
-	"gitlab.com/beacon-software/quimby/example/models"
+	"github.com/beaconsoftwarellc/gadget/errors"
+	"github.com/beaconsoftwarellc/gadget/generator"
+	"github.com/beaconsoftwarellc/quimby/example/models"
 )
 
 // WidgetStorage defines the interface for storing widgets

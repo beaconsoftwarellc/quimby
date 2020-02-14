@@ -6,11 +6,11 @@ package main
 import (
 	"fmt"
 
-	"gitlab.com/beacon-software/gadget/log"
-	qcontrollers "gitlab.com/beacon-software/quimby/controllers"
-	"gitlab.com/beacon-software/quimby/example/config"
-	"gitlab.com/beacon-software/quimby/example/controllers"
-	qhttp "gitlab.com/beacon-software/quimby/http"
+	"github.com/beaconsoftwarellc/gadget/log"
+	qcontrollers "github.com/beaconsoftwarellc/quimby/controllers"
+	"github.com/beaconsoftwarellc/quimby/example/config"
+	"github.com/beaconsoftwarellc/quimby/example/controllers"
+	qhttp "github.com/beaconsoftwarellc/quimby/http"
 )
 
 //go:generate codegen definition.yaml

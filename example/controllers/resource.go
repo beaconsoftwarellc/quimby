@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 
-	"gitlab.com/beacon-software/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/http"
 )
 
 // Get returns the ID and subresource (if provided)

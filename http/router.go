@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitlab.com/beacon-software/gadget/stringutil"
+	"github.com/beaconsoftwarellc/gadget/stringutil"
 )
 
 // WildCard character for paths.

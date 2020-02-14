@@ -4,8 +4,8 @@ package test
 // test_config.tmpl
 
 import (
-	"gitlab.com/beacon-software/gadget/log"
-	"gitlab.com/beacon-software/quimby/example/config"
+	"github.com/beaconsoftwarellc/gadget/log"
+	"github.com/beaconsoftwarellc/quimby/example/config"
 )
 
 // NewMockSpec for use in unit tests.
