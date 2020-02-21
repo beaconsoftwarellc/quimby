@@ -4,13 +4,11 @@ package main
 // main.tmpl
 
 import (
-	"fmt"
-
-	"github.com/beaconsoftwarellc/gadget/log"
 	qcontrollers "github.com/beaconsoftwarellc/quimby/controllers"
-	"github.com/beaconsoftwarellc/quimby/example/config"
-	"github.com/beaconsoftwarellc/quimby/example/controllers"
 	qhttp "github.com/beaconsoftwarellc/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/example/controllers"
+	"github.com/beaconsoftwarellc/quimby/http"
+    "github.com/beaconsoftwarellc/gadget/log"
 )
 
 //go:generate codegen definition.yaml
@@ -29,7 +27,7 @@ func main() {
 	server.Router.AddController(controllers.NewResourceController(specification))
 	server.Router.AddController(controllers.NewWidgetsController(specification))
 	server.Router.AddController(controllers.NewWidgetController(specification))
-
+	
 	log.Infof("Server starting ... http://localhost:%d/", specification.Port)
 	log.Error(server.ListenAndServe())
 }

@@ -10,7 +10,7 @@ import (
 )
 
 // NewMockSpec for use in unit tests.
-func NewMockSpec() (*config.Specification) {
+func NewMockSpec() *config.Specification {
 	spec := &config.Specification{
 		Log: log.NewStackLogger(),
 	}

@@ -6,16 +6,15 @@ package config
 import (
 	"github.com/beaconsoftwarellc/gadget/environment"
 	"github.com/beaconsoftwarellc/gadget/log"
-	"github.com/beaconsoftwarellc/quimby/example/storage"
 )
 
 // Specification details the expected values for the config
 type Specification struct {
-	Log log.Logger
-
-	Port int `env:"PORT,optional"`
-
-	Storage storage.WidgetStorage
+  Log log.Logger
+  
+  Port int `env:"PORT,optional"`
+  
+  Storage storage.WidgetStorage
 }
 
 // New returns a Specification based on the environment
@@ -25,7 +24,7 @@ func New() *Specification {
 
 // NewValues returns a Specification based on the env var map passed in
 func NewValues(envVars map[string]string) *Specification {
-	s := &Specification{
+	s := &Specification{ 
 		Port: 8080,
 	}
 	err := environment.ProcessMap(s, envVars)
@@ -35,7 +34,8 @@ func NewValues(envVars map[string]string) *Specification {
 
 	s.Log = log.New("ExampleGateway", log.FunctionFromEnv())
 
-	s.Storage = storage.NewWidgetStorage()
+	
+  	s.Storage = storage.NewWidgetStorage()
 
 	return s
 }

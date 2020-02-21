@@ -4,14 +4,15 @@ package controllers
 // controller.tmpl
 
 import (
+    "fmt"
 	qcontrollers "github.com/beaconsoftwarellc/quimby/controllers"
 	qerror "github.com/beaconsoftwarellc/quimby/error"
 	qhttp "github.com/beaconsoftwarellc/quimby/http"
 	"github.com/beaconsoftwarellc/gadget/errors"
+	"net/http"
 
-	"{{.BasePath}}/models"
 	"{{.BasePath}}/config"
-	"{{.BasePath}}/security"
+	"{{.BasePath}}/models"
 )
 
 {{ range $index, $controller := .Controllers }}
@@ -43,13 +44,12 @@ func (controller *{{$controller.ImplName}}Controller) GetRoutes() []string {
 	}
 }
 
-{{ range .Actions }}
-// {{.Method}} {{.Description}}
+{{ range .Actions }}// {{.Method}} {{.Description}}
 func (controller *{{$controller.ImplName}}Controller) {{.Method}}(context *qhttp.Context) {
-	{{ $controller.LoadAuth }}
+	{{ $controller.LoadAuth -}}
 	{{ .ReadRequestModel -}}
 	{{ .ReadQueryModel -}}
-	{{ if .Return }}resp, err := controller.do{{.Method}}(context, {{.Arguments $controller}})
+	{{- if .Return }}resp, err := controller.do{{.Method}}(context, {{.Arguments $controller}})
 	if nil != err {
 		qerror.TranslateError(context, err)
 		{{.ErrorLog}}

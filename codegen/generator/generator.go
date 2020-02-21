@@ -161,16 +161,15 @@ func (c *controller) HasAuth() bool {
 // Security returns the base struct for the controller to extend based on the Authentication specified
 func (c *controller) Security() string {
 	if !c.HasAuth() {
-		return `qcontrollers.MethodNotAllowedController
-		qcontrollers.NoAuthenticationController`
+		return "qcontrollers.MethodNotAllowedController\n\tqcontrollers.NoAuthenticationController"
 	}
 	switch c.Auth.Type {
 	case basicAuth:
-		return "qcontrollers.BasicAuthenticatedController"
+		return "\tqcontrollers.BasicAuthenticatedController"
 	case tokenAuth:
-		return "qcontrollers.TokenAuthenticatedController"
+		return "\tqcontrollers.TokenAuthenticatedController"
 	default:
-		return "security." + c.Auth.Type + "AuthenticatedController"
+		return "\tsecurity." + c.Auth.Type + "AuthenticatedController"
 	}
 }
 
