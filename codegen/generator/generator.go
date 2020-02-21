@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	fileMode  = os.FileMode(0777)
+	fileMode  = os.FileMode(0755)
 	basicAuth = "Basic"
 	tokenAuth = "Token"
 
@@ -78,13 +78,20 @@ func (gen *generator) Run() error {
 }
 
 func (gen *generator) writeTemplateToFile(filename, templateName string) {
-	fmt.Printf("creating %s (%s) with %s ", filename, fileMode, templateName)
+	fmt.Printf("creating %s (%s) with %s ... ", filename, fileMode, templateName)
 	fd, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
-	log.Error(err)
+	if nil != err {
+		fmt.Printf("%s\n", "FAILED")
+		log.Error(err)
+	}
+	defer fd.Close()
 	template := templates.GetTemplates()
 	err = template.ExecuteTemplate(fd, templateName, gen.definition)
-	log.ExitOnError(err)
-	fd.Close()
+	if nil != err {
+		fmt.Printf("%s\n", "FAILED")
+		log.ExitOnError(err)
+	}
+	fmt.Printf("%s\n", "SUCCESS")
 }
 
 type definition struct {
