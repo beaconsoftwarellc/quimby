@@ -313,23 +313,23 @@ func (a *action) ReturnDefinition() string {
 }
 
 const getRequestModelFmt = `request := &models.%s{}
-if err := context.ReadObject(request); nil != err {
-	context.SetError(&qerror.RestError{Code: qerror.ValidationError, Message: err.Error()}, http.StatusNotAcceptable)
-	return
-}
+	if err := context.ReadObject(request); nil != err {
+		context.SetError(&qerror.RestError{Code: qerror.ValidationError, Message: err.Error()}, http.StatusNotAcceptable)
+		return
+	}
 `
 const getRequestModelArrayFmt = `request := make([]*models.%s, 0)
-if err := context.ReadObject(&request); nil != err {
-	context.SetError(&qerror.RestError{Code: qerror.ValidationError, Message: err.Error()}, http.StatusNotAcceptable)
-	return
-}
+	if err := context.ReadObject(&request); nil != err {
+		context.SetError(&qerror.RestError{Code: qerror.ValidationError, Message: err.Error()}, http.StatusNotAcceptable)
+		return
+	}
 `
 
 const getQueryModelFmt = `queryParams := &models.%s{}
-if err := context.ReadQueryParams(queryParams); nil != err {
-	context.SetError(&qerror.RestError{Code: qerror.ValidationError, Message: err.Error()}, http.StatusNotAcceptable)
-	return
-}
+	if err := context.ReadQueryParams(queryParams); nil != err {
+		context.SetError(&qerror.RestError{Code: qerror.ValidationError, Message: err.Error()}, http.StatusNotAcceptable)
+		return
+	}
 `
 
 // ReadRequestModel generates the controller code to read a request from the body

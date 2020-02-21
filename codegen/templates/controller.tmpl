@@ -48,8 +48,8 @@ func (controller *{{$controller.ImplName}}Controller) GetRoutes() []string {
 func (controller *{{$controller.ImplName}}Controller) {{.Method}}(context *qhttp.Context) {
 	{{ $controller.LoadAuth -}}
 	{{ .ReadRequestModel -}}
-	{{ .ReadQueryModel -}}
-	{{- if .Return }}resp, err := controller.do{{.Method}}(context, {{.Arguments $controller}})
+	{{ .ReadQueryModel }}
+	{{ if .Return }}resp, err := controller.do{{.Method}}(context, {{.Arguments $controller}})
 	if nil != err {
 		qerror.TranslateError(context, err)
 		{{.ErrorLog}}
