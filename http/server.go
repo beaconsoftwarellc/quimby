@@ -121,7 +121,7 @@ func (server *RESTServer) ListenAndServe() error {
 		Handler:      server,
 	}
 	err := srv.ListenAndServe()
-	return log.Fatal(err)
+	return err
 }
 
 // ListenAndServeTLS starts a https server listening on the address specified
