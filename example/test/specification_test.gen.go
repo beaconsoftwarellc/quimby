@@ -4,7 +4,6 @@ package test
 // test_config.tmpl
 
 import (
-	"github.com/beaconsoftwarellc/gadget/environment"
 	"github.com/beaconsoftwarellc/gadget/log"
 	"github.com/beaconsoftwarellc/quimby/example/config"
 )

@@ -5,10 +5,11 @@ package main
 
 import (
 	qcontrollers "github.com/beaconsoftwarellc/quimby/controllers"
+	"github.com/beaconsoftwarellc/quimby/example/config"
 	qhttp "github.com/beaconsoftwarellc/quimby/http"
 	"github.com/beaconsoftwarellc/quimby/example/controllers"
-	"github.com/beaconsoftwarellc/quimby/http"
     "github.com/beaconsoftwarellc/gadget/log"
+	"fmt"
 )
 
 //go:generate codegen definition.yaml

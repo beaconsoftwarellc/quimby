@@ -6,6 +6,7 @@ package config
 import (
 	"github.com/beaconsoftwarellc/gadget/environment"
 	"github.com/beaconsoftwarellc/gadget/log"
+	"github.com/beaconsoftwarellc/quimby/example/storage"
 )
 
 // Specification details the expected values for the config
