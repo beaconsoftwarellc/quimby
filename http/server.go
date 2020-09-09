@@ -9,6 +9,8 @@ import (
 	qerror "github.com/beaconsoftwarellc/quimby/error"
 )
 
+// HealthCheckRoute is the default URI for health checks
+const HealthCheckRoute = "health"
 const healthCheckURI = "/" + HealthCheckRoute
 
 // RESTServer is a struct for managing the configuration and start up of a
@@ -71,7 +73,7 @@ func (server *RESTServer) CompleteRequest(context *Context) {
 			context.Request.UserAgent(), context.Request.Referer())
 	}
 
-	b := []byte{}
+	var b []byte
 	if context.HasError() {
 		b = []byte(context.Error.Message)
 	} else if nil != context.Model {
@@ -79,7 +81,8 @@ func (server *RESTServer) CompleteRequest(context *Context) {
 	}
 
 	context.Response.WriteHeader(context.responseStatus)
-	context.Response.Write(b)
+	_, err := context.Response.Write(b)
+	log.Error(err)
 }
 
 func (server *RESTServer) completeRequestJSON(context *Context) {

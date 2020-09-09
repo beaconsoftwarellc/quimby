@@ -1,10 +1,12 @@
 package controllers
 
-import qhttp "github.com/beaconsoftwarellc/quimby/http"
+import (
+	"github.com/beaconsoftwarellc/quimby/http"
+)
 
 // BasicAuthValidator handles verification of Username/Password
 type BasicAuthValidator interface {
-	Validate(context *qhttp.Context, username, password string) bool
+	Validate(context *http.Context, username, password string) bool
 }
 
 // BasicAuthenticatedController handles operations on the Registration Collection
@@ -14,7 +16,7 @@ type BasicAuthenticatedController struct {
 }
 
 // Authenticate verifies that a valid Registration header was provided
-func (controller *BasicAuthenticatedController) Authenticate(context *qhttp.Context) bool {
+func (controller *BasicAuthenticatedController) Authenticate(context *http.Context) bool {
 	context.Response.Header().Set("WWW-Authenticate", `Basic realm="Basic Auth Required"`)
 	username, password, ok := context.Request.BasicAuth()
 	if !ok {
@@ -25,7 +27,7 @@ func (controller *BasicAuthenticatedController) Authenticate(context *qhttp.Cont
 
 // HeaderAuthValidator handles verification by checking header values
 type HeaderAuthValidator interface {
-	Validate(context *qhttp.Context) bool
+	Validate(context *http.Context) bool
 }
 
 // HeaderAuthenticatedController handles operations on the Registration Collection
@@ -35,6 +37,6 @@ type HeaderAuthenticatedController struct {
 }
 
 // Authenticate verifies that a valid Registration header was provided
-func (controller *HeaderAuthenticatedController) Authenticate(context *qhttp.Context) bool {
+func (controller *HeaderAuthenticatedController) Authenticate(context *http.Context) bool {
 	return controller.validator.Validate(context)
 }

@@ -7,6 +7,27 @@ import (
 	"github.com/beaconsoftwarellc/gadget/errors"
 )
 
+const (
+	// CannotBeBlank indicates a field that was submitted blank, but is required
+	CannotBeBlank = "cannot-be-blank"
+	// ValidationError indicates that a validation rule such as min / max value was violated
+	ValidationError = "validation-error"
+	// MethodNotAllowed indicates that the attempted VERB is not implemented for that endpoint
+	MethodNotAllowed = "method-not-allowed"
+	// MalformedURL indicates that the URL was not parsable as input
+	MalformedURL = "malformed-url"
+	// InvalidRoute indicates that the route does not exist
+	InvalidRoute = "invalid-route"
+	// AuthenticationFailed indicates that authentication did not complete successfully
+	AuthenticationFailed = "authentication-failed"
+	// NotAuthorized indicates that the currently authenticated user is not permitted to perform an action
+	NotAuthorized = "not-authorized"
+	// SystemError indicates that a systemic issue has occurred with the request
+	SystemError = "system-error"
+	// NotFound indicates that the requested resource was not found
+	NotFound = "not-found"
+)
+
 // RestError represents the standard error returned by the API Gateway
 type RestError struct {
 	Code    string        `json:"code"`
@@ -21,7 +42,6 @@ func NewRestError(code string, message string, details []interface{}) *RestError
 		Message: message,
 		Details: details,
 	}
-
 }
 
 func (restError *RestError) Error() string {

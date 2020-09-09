@@ -16,17 +16,5 @@ unit:
 	go mod tidy
 	go test -cover -p 1 ./...
 
-tools:
-	go generate ./codegen
-	go install ./codegen
-
-gen: tools _gen fmt
-
-_gen:
-	go generate ./...
-
 fmt:
 	goimports -local github.com/beaconsoftwarellc/ -w .
-
-example: gen
-	go run example/main.gen.go

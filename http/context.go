@@ -57,6 +57,7 @@ type Context struct {
 	Route    *RouteNode
 
 	responseStatus int
+	Authentication Authentication
 	Model          interface{}
 	Error          *qerror.RestError
 
@@ -138,10 +139,12 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 			return context
 		}
 	}
-
-	if http.MethodOptions != context.Request.Method && !context.Route.Controller.Authenticate(context) {
-		context.SetError(
-			qerror.NewRestError(qerror.AuthenticationFailed, InvalidCredentialsErrorMessage, nil), http.StatusUnauthorized)
+	var ok bool
+	if http.MethodOptions != context.Request.Method {
+		if context.Authentication, ok = context.Route.Controller.Authenticate(context); !ok {
+			context.SetError(
+				qerror.NewRestError(qerror.AuthenticationFailed, InvalidCredentialsErrorMessage, nil), http.StatusUnauthorized)
+		}
 	}
 
 	return context

@@ -18,8 +18,8 @@ func NewTestController(ID string) TestController {
 	return TestController{ID: ID, Routes: []string{}}
 }
 
-func (controller *TestController) Authenticate(context *Context) bool {
-	return true
+func (controller *TestController) Authenticate(context *Context) (Authentication, bool) {
+	return nil, true
 }
 
 func (controller *TestController) GetRoutes() []string {
@@ -66,8 +66,8 @@ func NewNoAuthTestController(ID string) NoAuthTestController {
 	return NoAuthTestController{ID: ID, Routes: []string{}}
 }
 
-func (controller *NoAuthTestController) Authenticate(context *Context) bool {
-	return false
+func (controller *NoAuthTestController) Authenticate(context *Context) (Authentication, bool) {
+	return nil, false
 }
 
 func (controller *NoAuthTestController) GetRoutes() []string {
