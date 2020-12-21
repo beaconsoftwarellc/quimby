@@ -1,13 +1,9 @@
 package authentication
 
 import (
-    "encoding/base64"
     "github.com/beaconsoftwarellc/gadget/crypto"
-    "github.com/beaconsoftwarellc/gadget/log"
-    "github.com/beaconsoftwarellc/gadget/net"
     "github.com/beaconsoftwarellc/gadget/stringutil"
     "github.com/beaconsoftwarellc/quimby/http"
-    "strings"
     "time"
 )
 
@@ -43,40 +39,29 @@ type basicAuthenticator struct {
 }
 
 func (s *basicAuthenticator) Authenticate(context *http.Context) (http.Authentication, bool) {
-    var header string
     basicAuthentication := &basicAuthentication{
         created: time.Now(),
         expiry: time.Now().Add(s.ttl),
         valid: false,
         user: Anonymous,
     }
-    var success bool
-    headerValues, ok := context.Request.Header[net.HeaderAuthorization]
-    if len(headerValues) > 0 {
-        header = headerValues[0]
+    var password string
+    var ok bool
+    basicAuthentication.user, password, ok = context.Request.BasicAuth()
+    if !ok {
+        return basicAuthentication, false
     }
-    // we expected 'Basic base64(USER:PASS)'
-    if !ok || len(header) <= (len(Basic) + 1) {
-        return basicAuthentication, success
-
-    }
-    encoded := strings.TrimSpace(header[len(Basic)+1:])
-    decoded, err := base64.StdEncoding.DecodeString(encoded)
-    if nil != err {
-        log.Warnf("bad data in Authorization header, expected base64 encoded: %s", err)
-        return basicAuthentication, success
-    }
-    colonSplit := strings.SplitN(string(decoded), ":", 1)
-    if len(colonSplit) < 2 {
-        log.Warnf("Authorization header value bad format, expected ':'")
-        return basicAuthentication, success
-    }
-    basicAuthentication.user = colonSplit[0]
-    salt, hash, ok := s.get(basicAuthentication.user)
-    if ok && stringutil.ConstantTimeComparison(hash, crypto.Hash(colonSplit[1], salt)) {
+    hash, salt, ok := s.get(basicAuthentication.user)
+    if ok && stringutil.ConstantTimeComparison(hash, crypto.Hash(password, salt)) {
         basicAuthentication.valid = true
     }
-    return basicAuthentication, success
+    context.Authentication = basicAuthentication
+    return basicAuthentication, basicAuthentication.Valid()
+}
+
+func (s *basicAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
+    context.Authentication = &basicAuthentication{ created: time.Now(), expiry: time.Now().Add(s.ttl), valid: true, user: userID }
+    return context.Authentication, context.Authentication.Valid()
 }
 
 type basicAuthentication struct {

@@ -1,6 +1,7 @@
 package authentication
 
 import (
+    "github.com/beaconsoftwarellc/gadget/stringutil"
     "github.com/beaconsoftwarellc/quimby/http"
     "time"
 )
@@ -16,12 +17,19 @@ func NewAcceptAll() http.Authenticator {
 
 type acceptAllAuthenticator struct {}
 
-func (r acceptAllAuthenticator) Authenticate(*http.Context) (http.Authentication, bool) {
-    return &acceptAuthentication{}, false
+func (r *acceptAllAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
+    context.Authentication = &acceptAuthentication{userID: userID}
+    return context.Authentication, context.Authentication.Valid()
+}
+
+func (r *acceptAllAuthenticator) Authenticate(context *http.Context) (http.Authentication, bool) {
+    context.Authentication = &acceptAuthentication{}
+    return context.Authentication, context.Authentication.Valid()
 }
 
 type acceptAuthentication struct {
     ctime time.Time
+    userID string
 }
 
 func (r *acceptAuthentication) Type() string {
@@ -29,7 +37,10 @@ func (r *acceptAuthentication) Type() string {
 }
 
 func (r *acceptAuthentication) UserID() string {
-    return Anonymous
+    if stringutil.IsEmpty(r.userID) {
+        r.userID = Anonymous
+    }
+    return r.userID
 }
 
 func (r *acceptAuthentication) Created() time.Time {

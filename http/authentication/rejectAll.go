@@ -13,6 +13,11 @@ func NewRejectAll() http.Authenticator {
 
 type rejectAllAuthenticator struct {}
 
+func (r *rejectAllAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
+    context.Authentication = &rejectionAuthentication{}
+    return context.Authentication, context.Authentication.Valid()
+}
+
 func (r *rejectAllAuthenticator) Authenticate(*http.Context) (http.Authentication, bool) {
     return &rejectionAuthentication{}, false
 }

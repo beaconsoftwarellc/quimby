@@ -24,4 +24,6 @@ type Authenticator interface {
     // Authenticate the passed context and provide the authentication and bool indicating whether the
     // context is authenticated
     Authenticate(context *Context) (Authentication, bool)
+    // SetUserAuthentication on the passed context for the passed user ID.
+    SetUserAuthentication(context *Context, userID string) (Authentication, bool)
 }
