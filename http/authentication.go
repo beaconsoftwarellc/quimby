@@ -1,9 +1,5 @@
 package http
 
-import (
-	"time"
-)
-
 // Authentication provides a base for authentication implementations that are used as part of the http
 // context chain.
 type Authentication interface {
@@ -11,10 +7,6 @@ type Authentication interface {
 	GetType() string
 	// UserID that is requesting authentication
 	GetUserID() string
-	// Created time of this instance
-	GetCreated() time.Time
-	// Expiry of this authentication
-	GetExpiry() time.Time
 	// Valid indicates whether the user id on this instance is authentic
 	IsValid() bool
 }
