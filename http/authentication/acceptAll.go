@@ -33,7 +33,7 @@ type acceptAuthentication struct {
 	userID string
 }
 
-func (r *acceptAuthentication) GetType() string {
+func (r *acceptAuthentication) GetKind() string {
 	return Accept
 }
 

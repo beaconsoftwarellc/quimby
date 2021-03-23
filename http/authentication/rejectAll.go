@@ -27,7 +27,7 @@ type rejectionAuthentication struct {
 	ctime time.Time
 }
 
-func (r *rejectionAuthentication) GetType() string {
+func (r *rejectionAuthentication) GetKind() string {
 	return Reject
 }
 

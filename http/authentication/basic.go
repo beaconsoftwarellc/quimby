@@ -72,7 +72,7 @@ type basicAuthentication struct {
 	valid   bool
 }
 
-func (b basicAuthentication) GetType() string {
+func (b basicAuthentication) GetKind() string {
 	return Basic
 }
 
