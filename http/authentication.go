@@ -4,7 +4,7 @@ package http
 // context chain.
 type Authentication interface {
 	// Type of authentication this instance provides
-	GetType() string
+	GetKind() string
 	// UserID that is requesting authentication
 	GetUserID() string
 	// Valid indicates whether the user id on this instance is authentic
