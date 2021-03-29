@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -113,7 +114,7 @@ func TestCompleteRequestResponse(t *testing.T) {
 
 	context := Context{Request: r, Response: w}
 	context.SetResponse("OK", http.StatusOK)
-	server.CompleteRequest(&context)
+	server.CompleteRequest(time.Now(), &context)
 	assert.Equal("\"OK\"", stringutil.NullTerminatedString(writerBody))
 	assert.Equal(http.StatusOK, writerStatus)
 }
@@ -133,7 +134,7 @@ func TestCompleteRequestError(t *testing.T) {
 	context := Context{Request: r, Response: w}
 	err := qerror.NewRestError("testing", "", nil)
 	context.SetError(err, http.StatusTeapot)
-	server.CompleteRequest(&context)
+	server.CompleteRequest(time.Now(), &context)
 	b, _ := json.Marshal(err)
 	assert.Equal(string(b), stringutil.NullTerminatedString(writerBody))
 	assert.Equal(http.StatusTeapot, writerStatus)
@@ -157,7 +158,7 @@ func TestCompleteRequestErrorCannotMarshall(t *testing.T) {
 	err := qerror.NewRestError("testing", "", nil)
 	err.Details = append(err.Details, math.Inf(1))
 	context.SetError(err, http.StatusTeapot)
-	server.CompleteRequest(&context)
+	server.CompleteRequest(time.Now(), &context)
 	assert.Equal(string(exp), stringutil.NullTerminatedString(writerBody))
 	assert.Equal(http.StatusInternalServerError, writerStatus)
 }
@@ -177,7 +178,7 @@ func TestCompleteRequestResponseCannotMarshal(t *testing.T) {
 	context := Context{Request: r, Response: w}
 	exp, _ := json.Marshal(qerror.NewRestError("system-error", "", nil))
 	context.SetResponse(math.Inf(1), http.StatusAlreadyReported)
-	server.CompleteRequest(&context)
+	server.CompleteRequest(time.Now(), &context)
 	assert.Equal(string(exp), stringutil.NullTerminatedString(writerBody))
 	assert.Equal(http.StatusInternalServerError, writerStatus)
 }

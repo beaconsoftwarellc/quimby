@@ -30,6 +30,7 @@ func CreateRESTServer(address string, rootController Controller) RESTServer {
 
 // ServeHTTP processes the HTTP Request
 func (server *RESTServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	context := CreateContext(w, r, server.Router)
 	if !context.HasError() {
 		switch context.Request.Method {
@@ -49,7 +50,7 @@ func (server *RESTServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			context.SetError(qerror.NewRestError(qerror.MethodNotAllowed, "", nil), http.StatusMethodNotAllowed)
 		}
 	}
-	server.CompleteRequest(context)
+	server.CompleteRequest(start, context)
 }
 
 const (
@@ -59,18 +60,21 @@ const (
 )
 
 // CompleteRequest generates output and completes the Request
-func (server *RESTServer) CompleteRequest(context *Context) {
+func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 	if "" == context.Response.Header().Get(contentTypeHeader) { // if not set assuming it's JSON
 		server.completeRequestJSON(context)
 		return
 	}
 
 	if healthCheckURI != context.URI {
-		log.Accessf("%s %s %s %s %#v %d %s %s",
+		log.Accessf("%s %s %s %s %#v %d %s %s %s",
 			context.Request.RemoteAddr,
 			context.Request.Method, context.Request.URL.String(), context.Request.Proto, context.URLParameters,
 			context.Status(),
-			context.Request.UserAgent(), context.Request.Referer())
+			context.Request.UserAgent(),
+			context.Request.Referer(),
+			time.Since(start),
+		)
 	}
 
 	var b []byte
