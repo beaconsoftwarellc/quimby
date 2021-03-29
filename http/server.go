@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/beaconsoftwarellc/gadget/log"
+	"github.com/beaconsoftwarellc/gadget/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/error"
 )
 
@@ -61,20 +62,26 @@ const (
 
 // CompleteRequest generates output and completes the Request
 func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
-	if "" == context.Response.Header().Get(contentTypeHeader) { // if not set assuming it's JSON
+	if healthCheckURI != context.URI {
+		defer func(start time.Time) {
+			log.Accessf("%s %s %s %s %#v %d %s %s %s",
+				context.Request.RemoteAddr,
+				context.Request.Method, context.Request.URL.String(), context.Request.Proto, context.URLParameters,
+				context.Status(),
+				context.Request.UserAgent(),
+				context.Request.Referer(),
+				time.Since(start),
+			)
+		}(start)
+	}
+	contentType := context.Response.Header().Get(contentTypeHeader)
+	if stringutil.IsWhiteSpace(context.Response.Header().Get(contentTypeHeader)) {
+		contentType = contentTypeJSON
+		context.Response.Header().Set(contentTypeHeader, contentType)
+	}
+	if contentTypeJSON == contentType {
 		server.completeRequestJSON(context)
 		return
-	}
-
-	if healthCheckURI != context.URI {
-		log.Accessf("%s %s %s %s %#v %d %s %s %s",
-			context.Request.RemoteAddr,
-			context.Request.Method, context.Request.URL.String(), context.Request.Proto, context.URLParameters,
-			context.Status(),
-			context.Request.UserAgent(),
-			context.Request.Referer(),
-			time.Since(start),
-		)
 	}
 
 	var b []byte
@@ -105,14 +112,6 @@ func (server *RESTServer) completeRequestJSON(context *Context) {
 			context.SetError(qerror.NewRestError("system-error", "", nil), http.StatusInternalServerError)
 			b, _ = json.Marshal(context.Error)
 		}
-	}
-
-	if healthCheckURI != context.URI {
-		log.Accessf("%s %s %s %s %#v %s %d %s %s",
-			context.Request.RemoteAddr,
-			context.Request.Method, context.Request.URL.String(), context.Request.Proto, context.URLParameters, context.Body,
-			context.Status(),
-			context.Request.UserAgent(), context.Request.Referer())
 	}
 	context.Response.WriteHeader(context.responseStatus)
 	context.Response.Write(b)
