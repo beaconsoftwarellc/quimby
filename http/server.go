@@ -64,13 +64,16 @@ const (
 func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 	if healthCheckURI != context.URI {
 		defer func(start time.Time) {
-			log.Accessf("%s %s %s %s %#v %d %s %s %s",
+			log.Accessf("%s %s %s %s %d %s %s %s %s",
 				context.Request.RemoteAddr,
-				context.Request.Method, context.Request.URL.String(), context.Request.Proto, context.URLParameters,
+				context.Request.Method,
+				context.Request.Proto,
+				context.Request.URL.String(),
 				context.Status(),
+				time.Since(start),
+				context.URLParameters.Encode(),
 				context.Request.UserAgent(),
 				context.Request.Referer(),
-				time.Since(start),
 			)
 		}(start)
 	}
