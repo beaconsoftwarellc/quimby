@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/beaconsoftwarellc/gadget/database"
 	"github.com/beaconsoftwarellc/gadget/errors"
 )
 
@@ -122,6 +123,9 @@ func TranslateError(container RestErrorContainer, err error) {
 	var restError *RestError
 
 	switch err.(type) {
+	case *database.NotFoundError:
+		restError = &RestError{Code: NotFound, Message: err.Error()}
+		status = http.StatusNotFound
 	case *NotFoundError:
 		restError = &RestError{Code: NotFound, Message: err.Error()}
 		status = http.StatusNotFound
