@@ -7,8 +7,8 @@ type Authentication interface {
 	GetKind() string
 	// UserID that is requesting authentication
 	GetUserID() string
-	// Valid indicates whether the user id on this instance is authentic
-	IsValid() bool
+	// GetValidity indicates whether the user id on this instance is authentic
+	GetValidity() bool
 }
 
 // Authenticator is responsible for the initialization of a Authentication from a http context.
