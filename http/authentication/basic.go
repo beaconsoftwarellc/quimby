@@ -57,12 +57,12 @@ func (s *basicAuthenticator) Authenticate(context *http.Context) (http.Authentic
 		basicAuthentication.valid = true
 	}
 	context.Authentication = basicAuthentication
-	return basicAuthentication, basicAuthentication.IsValid()
+	return basicAuthentication, basicAuthentication.GetValidity()
 }
 
 func (s *basicAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
 	context.Authentication = &basicAuthentication{created: time.Now(), expiry: time.Now().Add(s.ttl), valid: true, user: userID}
-	return context.Authentication, context.Authentication.IsValid()
+	return context.Authentication, context.Authentication.GetValidity()
 }
 
 type basicAuthentication struct {
@@ -88,6 +88,6 @@ func (b basicAuthentication) GetExpiry() time.Time {
 	return b.expiry
 }
 
-func (b basicAuthentication) IsValid() bool {
+func (b basicAuthentication) GetValidity() bool {
 	return b.valid
 }

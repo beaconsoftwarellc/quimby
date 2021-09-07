@@ -20,12 +20,12 @@ type acceptAllAuthenticator struct{}
 
 func (r *acceptAllAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
 	context.Authentication = &acceptAuthentication{userID: userID}
-	return context.Authentication, context.Authentication.IsValid()
+	return context.Authentication, context.Authentication.GetValidity()
 }
 
 func (r *acceptAllAuthenticator) Authenticate(context *http.Context) (http.Authentication, bool) {
 	context.Authentication = &acceptAuthentication{}
-	return context.Authentication, context.Authentication.IsValid()
+	return context.Authentication, context.Authentication.GetValidity()
 }
 
 type acceptAuthentication struct {
@@ -52,6 +52,6 @@ func (r *acceptAuthentication) GetExpiry() time.Time {
 	return time.Now().Add(time.Minute)
 }
 
-func (r *acceptAuthentication) IsValid() bool {
+func (r *acceptAuthentication) GetValidity() bool {
 	return true
 }

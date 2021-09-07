@@ -16,7 +16,7 @@ type rejectAllAuthenticator struct{}
 
 func (r *rejectAllAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
 	context.Authentication = &rejectionAuthentication{}
-	return context.Authentication, context.Authentication.IsValid()
+	return context.Authentication, context.Authentication.GetValidity()
 }
 
 func (r *rejectAllAuthenticator) Authenticate(*http.Context) (http.Authentication, bool) {
@@ -43,6 +43,6 @@ func (r *rejectionAuthentication) GetExpiry() time.Time {
 	return r.ctime
 }
 
-func (r *rejectionAuthentication) IsValid() bool {
+func (r *rejectionAuthentication) GetValidity() bool {
 	return false
 }
