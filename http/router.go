@@ -91,7 +91,7 @@ func (router *Router) AddRoute(route string, controller Controller) error {
 	// make sure the route does not have any silly things like trailing or
 	// double slashes
 	if len(stringutil.Clean(splitRoute)) != len(splitRoute) {
-		return fmt.Errorf("Invalid route format '%s'. Remove leading, "+
+		return fmt.Errorf("invalid route format '%s'. Remove leading, "+
 			"trailing, and double slashes", route)
 	}
 	node = router.RouteTree.insertRoute(splitRoute)
@@ -144,7 +144,7 @@ func (router *Router) FindRouteForPath(path string) (*RouteNode, error) {
 	// if the node or the Controller on the node is nil we didn't
 	// locate a route that matched the path (non-terminal).
 	if node == nil || node.Controller == nil {
-		err = fmt.Errorf("No route defined for path '%s'", path)
+		err = fmt.Errorf("no route defined for path '%s'", path)
 	}
 	return node, err
 }
