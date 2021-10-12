@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/beaconsoftwarellc/gadget/errors"
@@ -212,24 +213,47 @@ func (context *Context) valuesToObject(values url.Values, target interface{}) er
 			break
 		case reflect.Slice, reflect.Array:
 			var arrayValues []string
+			var arrayIntValues []int
 			arrayFieldName := stringutil.Underscore(fieldName)
 			queryVal := values.Get(arrayFieldName)
 			// ignore empty query string arguments
 			if !stringutil.IsEmpty(queryVal) {
-				arrayValues = append(arrayValues, values[arrayFieldName]...)
+				if _, err := strconv.Atoi(queryVal); err == nil {
+					for _, val := range values[arrayFieldName] {
+						if intVal, err := strconv.Atoi(val); err == nil {
+							arrayIntValues = append(arrayIntValues, intVal)
+						}
+					}
+				} else {
+					arrayValues = append(arrayValues, values[arrayFieldName]...)
+				}
 			}
 			arrayFieldName = stringutil.Underscore(fieldName) + "[]"
 			queryVal = values.Get(arrayFieldName)
 			if !stringutil.IsEmpty(queryVal) {
-				arrayValues = append(arrayValues, values[arrayFieldName]...)
+				if _, err := strconv.Atoi(queryVal); err == nil {
+					for _, val := range values[arrayFieldName] {
+						if intVal, err := strconv.Atoi(val); err == nil {
+							arrayIntValues = append(arrayIntValues, intVal)
+						}
+					}
+				} else {
+					arrayValues = append(arrayValues, values[arrayFieldName]...)
+				}
 			}
-			if len(arrayValues) > 0 {
+			if len(arrayIntValues) > 0 {
+				valueMap[fieldName] = arrayIntValues
+			} else if len(arrayValues) > 0 {
 				valueMap[fieldName] = arrayValues
 			}
 		default:
 			queryVal := values.Get(stringutil.Underscore(fieldName))
 			if !stringutil.IsEmpty(queryVal) {
-				valueMap[fieldName] = queryVal
+				if intVal, err := strconv.Atoi(queryVal); err == nil {
+					valueMap[fieldName] = intVal
+				} else {
+					valueMap[fieldName] = queryVal
+				}
 			}
 		}
 	}
