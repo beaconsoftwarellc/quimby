@@ -195,66 +195,71 @@ func (context *Context) readForm(body []byte, target interface{}) error {
 	return context.valuesToObject(values, target)
 }
 
-func (context *Context) inspectModel(target interface{}) map[string]interface{} {
+func (context *Context) inspectModel(target interface{}) map[string]reflect.Type {
 	v := reflect.Indirect(reflect.ValueOf(target))
-	fieldMap := make(map[string]interface{}, v.NumField())
+	fieldMap := make(map[string]reflect.Type, v.NumField())
 	for i := 0; i < v.NumField(); i++ {
 		fieldMap[v.Type().Field(i).Name] = v.Field(i).Type()
 	}
 	return fieldMap
 }
 
+func (context *Context) valuesToArray(fieldType reflect.Type, values []string) []interface{} {
+	elemKind := fieldType.Elem().Kind()
+	anon := make([]interface{}, len(values))
+	coerce := func(v string) interface{} { return v }
+	if elemKind == reflect.Int {
+		coerce = func(v string) interface{} {
+			i, err := strconv.Atoi(v)
+			if nil != err {
+				log.Warnf("error encountered coercing url value '%s' to int: %s", v, err)
+			}
+			return i
+		}
+	} else if elemKind != reflect.String {
+		log.Warnf("valuesToArray recieved unhandled kind %v", elemKind)
+		return nil
+	}
+	for i, v := range values {
+		anon[i] = coerce(v)
+	}
+	return anon
+}
+
 func (context *Context) valuesToObject(values url.Values, target interface{}) error {
+	var err error
 	fieldMap := context.inspectModel(target)
 	valueMap := make(map[string]interface{})
 	for fieldName, fieldType := range fieldMap {
-		switch fieldType.(reflect.Type).Kind() {
+		urlFieldName := stringutil.Underscore(fieldName)
+		queryValues := values[urlFieldName]
+		queryValues = append(queryValues, values[urlFieldName+"[]"]...)
+		if len(queryValues) == 0 {
+			continue
+		}
+		switch fieldType.Kind() {
 		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Struct, reflect.UnsafePointer:
-			break
+			continue
 		case reflect.Slice, reflect.Array:
-			var arrayValues []string
-			var arrayIntValues []int
-			arrayFieldName := stringutil.Underscore(fieldName)
-			queryVal := values.Get(arrayFieldName)
-			// ignore empty query string arguments
-			if !stringutil.IsEmpty(queryVal) {
-				if _, err := strconv.Atoi(queryVal); err == nil {
-					for _, val := range values[arrayFieldName] {
-						if intVal, err := strconv.Atoi(val); err == nil {
-							arrayIntValues = append(arrayIntValues, intVal)
-						}
-					}
-				} else {
-					arrayValues = append(arrayValues, values[arrayFieldName]...)
-				}
+			if len(queryValues) == 0 {
+				continue
 			}
-			arrayFieldName = stringutil.Underscore(fieldName) + "[]"
-			queryVal = values.Get(arrayFieldName)
-			if !stringutil.IsEmpty(queryVal) {
-				if _, err := strconv.Atoi(queryVal); err == nil {
-					for _, val := range values[arrayFieldName] {
-						if intVal, err := strconv.Atoi(val); err == nil {
-							arrayIntValues = append(arrayIntValues, intVal)
-						}
-					}
-				} else {
-					arrayValues = append(arrayValues, values[arrayFieldName]...)
-				}
-			}
-			if len(arrayIntValues) > 0 {
-				valueMap[fieldName] = arrayIntValues
-			} else if len(arrayValues) > 0 {
+			if arrayValues := context.valuesToArray(fieldType, queryValues); nil != arrayValues {
 				valueMap[fieldName] = arrayValues
+			} else {
+				log.Warnf("failed to assigned values to array for field '%s' kind '%s'",
+					urlFieldName, fieldType.Kind())
+			}
+		case reflect.String:
+			valueMap[fieldName] = queryValues[0]
+		case reflect.Int:
+			valueMap[fieldName], err = strconv.Atoi(queryValues[0])
+			if nil != err {
+				log.Warnf("error parsing int for field name '%s' and value '%s'",
+					fieldName, queryValues[0])
 			}
 		default:
-			queryVal := values.Get(stringutil.Underscore(fieldName))
-			if !stringutil.IsEmpty(queryVal) {
-				if intVal, err := strconv.Atoi(queryVal); err == nil {
-					valueMap[fieldName] = intVal
-				} else {
-					valueMap[fieldName] = queryVal
-				}
-			}
+			log.Warnf("unhandled kind %v will be omitted from url values", fieldType)
 		}
 	}
 	data, err := json.Marshal(valueMap)
