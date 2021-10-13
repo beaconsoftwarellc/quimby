@@ -471,6 +471,38 @@ func TestReadObject_withForm_IntegerValues(t *testing.T) {
 	assert.Nil(err)
 }
 
+func TestReadObject_withForm_OnlyArrayValues(t *testing.T) {
+	assert := assert.New(t)
+
+	v := "favorite_numbers[]=1&favorite_numbers[]=2"
+
+	expected := TestModel4{
+		Age:             0,
+		FavoriteNumbers: []int{1, 2},
+	}
+
+	b := FakeBody{
+		Content: v,
+		Error:   io.EOF,
+	}
+	r := http.Request{
+		Method: http.MethodPost,
+		Header: map[string][]string{
+			"Content-Type": {"application/x-www-form-urlencoded"},
+		},
+		ContentLength: int64(len(b.Content)),
+		Body:          b,
+	}
+	context := Context{
+		Request: &r,
+	}
+	model := TestModel4{}
+	err := context.ReadObject(&model)
+
+	assert.Equal(expected, model)
+	assert.Nil(err)
+}
+
 func TestReadObject_withForm_Unsuppported(t *testing.T) {
 	assert := assert.New(t)
 

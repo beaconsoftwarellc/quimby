@@ -233,6 +233,7 @@ func (context *Context) valuesToObject(values url.Values, target interface{}) er
 	for fieldName, fieldType := range fieldMap {
 		urlFieldName := stringutil.Underscore(fieldName)
 		queryValues := values[urlFieldName]
+		queryValues = append(queryValues, values[urlFieldName+"[]"]...)
 		if len(queryValues) == 0 {
 			continue
 		}
@@ -240,7 +241,6 @@ func (context *Context) valuesToObject(values url.Values, target interface{}) er
 		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Struct, reflect.UnsafePointer:
 			continue
 		case reflect.Slice, reflect.Array:
-			queryValues = append(queryValues, values[stringutil.Underscore(fieldName)+"[]"]...)
 			if len(queryValues) == 0 {
 				continue
 			}
