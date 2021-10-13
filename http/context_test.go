@@ -32,6 +32,11 @@ type TestModel4 struct {
 	FavoriteNumbers []int `json:"favoritenumbers"`
 }
 
+type TestModel5 struct {
+	Age             float32   `json:"age"`
+	FavoriteNumbers []float32 `json:"favoritenumbers"`
+}
+
 type FakeBody struct {
 	Content string
 	Size    int
@@ -460,6 +465,35 @@ func TestReadObject_withForm_IntegerValues(t *testing.T) {
 		Request: &r,
 	}
 	model := TestModel4{}
+	err := context.ReadObject(&model)
+
+	assert.Equal(expected, model)
+	assert.Nil(err)
+}
+
+func TestReadObject_withForm_Unsuppported(t *testing.T) {
+	assert := assert.New(t)
+
+	v := "age=100&favorite_numbers[]=1&favorite_numbers[]=2&favorite_numbers=33"
+
+	expected := TestModel5{}
+
+	b := FakeBody{
+		Content: v,
+		Error:   io.EOF,
+	}
+	r := http.Request{
+		Method: http.MethodPost,
+		Header: map[string][]string{
+			"Content-Type": {"application/x-www-form-urlencoded"},
+		},
+		ContentLength: int64(len(b.Content)),
+		Body:          b,
+	}
+	context := Context{
+		Request: &r,
+	}
+	model := TestModel5{}
 	err := context.ReadObject(&model)
 
 	assert.Equal(expected, model)

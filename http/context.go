@@ -211,13 +211,14 @@ func (context *Context) valuesToArray(fieldType reflect.Type, values []string) [
 	if elemKind == reflect.Int {
 		coerce = func(v string) interface{} {
 			i, err := strconv.Atoi(v)
-			log.Warnf("error encountered coercing url value '%s' to int: %s", v, err)
+			if nil != err {
+				log.Warnf("error encountered coercing url value '%s' to int: %s", v, err)
+			}
 			return i
 		}
-	} else if elemKind == reflect.String {
-
-	} else {
-		log.Warnf("unhandled kind %v will be omitted from url values", elemKind)
+	} else if elemKind != reflect.String {
+		log.Warnf("valuesToArray recieved unhandled kind %v", elemKind)
+		return nil
 	}
 	for i, v := range values {
 		anon[i] = coerce(v)
@@ -231,21 +232,32 @@ func (context *Context) valuesToObject(values url.Values, target interface{}) er
 	valueMap := make(map[string]interface{})
 	for fieldName, fieldType := range fieldMap {
 		urlFieldName := stringutil.Underscore(fieldName)
+		queryValues := values[urlFieldName]
+		if len(queryValues) == 0 {
+			continue
+		}
 		switch fieldType.Kind() {
 		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Struct, reflect.UnsafePointer:
 			continue
 		case reflect.Slice, reflect.Array:
-			queryValues := values[urlFieldName]
 			queryValues = append(queryValues, values[stringutil.Underscore(fieldName)+"[]"]...)
 			if len(queryValues) == 0 {
 				continue
 			}
-			valueMap[fieldName] = context.valuesToArray(fieldType, queryValues)
+			if arrayValues := context.valuesToArray(fieldType, queryValues); nil != arrayValues {
+				valueMap[fieldName] = arrayValues
+			} else {
+				log.Warnf("failed to assigned values to array for field '%s' kind '%s'",
+					urlFieldName, fieldType.Kind())
+			}
 		case reflect.String:
-			valueMap[fieldName] = values.Get(stringutil.Underscore(fieldName))
+			valueMap[fieldName] = queryValues[0]
 		case reflect.Int:
-			valueMap[fieldName], err = strconv.Atoi(stringutil.Underscore(fieldName))
-			log.Warn(err)
+			valueMap[fieldName], err = strconv.Atoi(queryValues[0])
+			if nil != err {
+				log.Warnf("error parsing int for field name '%s' and value '%s'",
+					fieldName, queryValues[0])
+			}
 		default:
 			log.Warnf("unhandled kind %v will be omitted from url values", fieldType)
 		}
