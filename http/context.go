@@ -119,7 +119,8 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 
 	if err != nil {
 		// take a hard stance on malformed URL's
-		context.SetError(qerror.NewRestError(qerror.MalformedURL, fmt.Sprintf("Malformed URL Parameters '%s'.", request.URL), nil),
+		context.SetError(qerror.NewRestError(qerror.MalformedURL,
+			fmt.Sprintf("Malformed URL Parameters '%s'.", request.URL), nil),
 			http.StatusBadRequest)
 		return context
 	}
@@ -144,7 +145,8 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 	if http.MethodOptions != context.Request.Method {
 		if context.Authentication, ok = context.Route.Controller.Authenticate(context); !ok {
 			context.SetError(
-				qerror.NewRestError(qerror.AuthenticationFailed, InvalidCredentialsErrorMessage, nil), http.StatusUnauthorized)
+				qerror.NewRestError(qerror.AuthenticationFailed,
+					InvalidCredentialsErrorMessage, nil), http.StatusUnauthorized)
 		}
 	}
 
