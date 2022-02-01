@@ -137,25 +137,21 @@ func TranslateError(container RestErrorContainer, err error) {
 	if ok {
 		switch statusError.Code() {
 		case codes.NotFound:
-			restError = &RestError{
-				Code:    NotFound,
-				Message: statusError.Message(),
-				Details: []interface{}{statusError},
-			}
+			restError = &RestError{Code: NotFound, Message: statusError.Message()}
 			httpStatus = http.StatusNotFound
 		case codes.Unauthenticated:
-			restError = &RestError{Code: AuthenticationFailed, Message: err.Error()}
+			restError = &RestError{Code: AuthenticationFailed, Message: statusError.Message()}
 			httpStatus = http.StatusUnauthorized
 		case codes.PermissionDenied:
-			restError = &RestError{Code: NotAuthorized, Message: err.Error()}
+			restError = &RestError{Code: NotAuthorized, Message: statusError.Message()}
 			httpStatus = http.StatusForbidden
 		case codes.AlreadyExists:
 			fallthrough
 		case codes.FailedPrecondition:
-			restError = &RestError{Code: ValidationError, Message: err.Error()}
+			restError = &RestError{Code: ValidationError, Message: statusError.Message()}
 			httpStatus = http.StatusBadRequest
 		default:
-			restError = &RestError{Code: SystemError, Message: err.Error()}
+			restError = &RestError{Code: SystemError, Message: statusError.Message()}
 			httpStatus = http.StatusInternalServerError
 		}
 	} else {
