@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/beaconsoftwarellc/gadget/generator"
 	"github.com/beaconsoftwarellc/gadget/stringutil"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/beacon-software/gadget/generator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
