@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/beaconsoftwarellc/gadget/database"
 	"github.com/beaconsoftwarellc/gadget/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -21,7 +22,8 @@ const (
 	InvalidRoute = "invalid-route"
 	// AuthenticationFailed indicates that authentication did not complete successfully
 	AuthenticationFailed = "authentication-failed"
-	// NotAuthorized indicates that the currently authenticated user is not permitted to perform an action
+	// NotAuthorized indicates that the currently authenticated user is not
+	// permitted to perform an action
 	NotAuthorized = "not-authorized"
 	// SystemError indicates that a systemic issue has occurred with the request
 	SystemError = "system-error"
@@ -46,7 +48,8 @@ func NewRestError(code string, message string, details []interface{}) *RestError
 }
 
 func (restError *RestError) Error() string {
-	return fmt.Sprintf("%s (%s): %#v", restError.Message, restError.Code, restError.Details)
+	return fmt.Sprintf("%s (%s): %#v", restError.Message, restError.Code,
+		restError.Details)
 }
 
 // AddDetail adds a detail such as a FieldError to an Error response
@@ -68,6 +71,11 @@ func NewFieldError(code, message, field string) *FieldError {
 		Message: message,
 		Field:   field,
 	}
+}
+
+func (err *FieldError) Error() string {
+	return fmt.Sprintf("validation failed for field %s: %s", err.Field,
+		err.Message)
 }
 
 // RestErrorContainer holds a RestError
@@ -119,22 +127,48 @@ func (err *NotAuthenticatedError) Trace() []string {
 
 // TranslateError from an ErrorMessage to a RestError and set it on a ErrorContainer
 func TranslateError(container RestErrorContainer, err error) {
-	var status int
-	var restError *RestError
-
-	switch err.(type) {
-	case *database.NotFoundError:
-		restError = &RestError{Code: NotFound, Message: err.Error()}
-		status = http.StatusNotFound
-	case *NotFoundError:
-		restError = &RestError{Code: NotFound, Message: err.Error()}
-		status = http.StatusNotFound
-	case *NotAuthenticatedError:
-		restError = &RestError{Code: NotFound, Message: err.Error()}
-		status = http.StatusUnauthorized
-	default:
-		restError = &RestError{Code: ValidationError, Message: err.Error()}
-		status = http.StatusBadRequest
+	if nil == err {
+		return
 	}
-	container.SetError(restError, status)
+	var httpStatus int
+	var restError *RestError
+	// handle GRPC first
+	statusError, ok := status.FromError(err)
+	if ok {
+		switch statusError.Code() {
+		case codes.NotFound:
+			restError = &RestError{Code: NotFound, Message: statusError.Message()}
+			httpStatus = http.StatusNotFound
+		case codes.Unauthenticated:
+			restError = &RestError{Code: AuthenticationFailed, Message: statusError.Message()}
+			httpStatus = http.StatusUnauthorized
+		case codes.PermissionDenied:
+			restError = &RestError{Code: NotAuthorized, Message: statusError.Message()}
+			httpStatus = http.StatusForbidden
+		case codes.AlreadyExists:
+			fallthrough
+		case codes.FailedPrecondition:
+			restError = &RestError{Code: ValidationError, Message: statusError.Message()}
+			httpStatus = http.StatusBadRequest
+		default:
+			restError = &RestError{Code: SystemError, Message: statusError.Message()}
+			httpStatus = http.StatusInternalServerError
+		}
+	} else {
+		switch err.(type) {
+		case *FieldError:
+			restError = &RestError{Code: ValidationError, Message: err.Error()}
+			httpStatus = http.StatusBadRequest
+		case *NotFoundError:
+			restError = &RestError{Code: NotFound, Message: err.Error()}
+			httpStatus = http.StatusNotFound
+		case *NotAuthenticatedError:
+			restError = &RestError{Code: AuthenticationFailed, Message: err.Error()}
+			httpStatus = http.StatusUnauthorized
+		default:
+			restError = &RestError{Code: SystemError, Message: err.Error()}
+			httpStatus = http.StatusInternalServerError
+		}
+	}
+	container.SetError(restError, httpStatus)
 }
