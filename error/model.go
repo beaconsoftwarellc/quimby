@@ -136,6 +136,9 @@ func TranslateError(container RestErrorContainer, err error) {
 	statusError, ok := status.FromError(err)
 	if ok {
 		switch statusError.Code() {
+		case codes.OK:
+			// noop this should go through with no error
+			return
 		case codes.NotFound:
 			restError = &RestError{Code: NotFound, Message: statusError.Message()}
 			httpStatus = http.StatusNotFound
@@ -145,6 +148,8 @@ func TranslateError(container RestErrorContainer, err error) {
 		case codes.PermissionDenied:
 			restError = &RestError{Code: NotAuthorized, Message: statusError.Message()}
 			httpStatus = http.StatusForbidden
+		case codes.OutOfRange:
+			fallthrough
 		case codes.InvalidArgument:
 			fallthrough
 		case codes.AlreadyExists:
