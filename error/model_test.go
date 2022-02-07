@@ -76,6 +76,12 @@ func TestTranslateError(t *testing.T) {
 			expectedStatus:   http.StatusBadRequest,
 		},
 		{
+			name:             "codes.InvalidArgument",
+			err:              status.Error(codes.InvalidArgument, ""),
+			expectedRestCode: ValidationError,
+			expectedStatus:   http.StatusBadRequest,
+		},
+		{
 			name:             "codes.Canceled",
 			err:              status.Error(codes.Canceled, ""),
 			expectedRestCode: SystemError,
