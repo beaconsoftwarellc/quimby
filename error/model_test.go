@@ -88,6 +88,12 @@ func TestTranslateError(t *testing.T) {
 			expectedStatus:   http.StatusInternalServerError,
 		},
 		{
+			name:             "codes.OutOfRange",
+			err:              status.Error(codes.OutOfRange, ""),
+			expectedRestCode: ValidationError,
+			expectedStatus:   http.StatusBadRequest,
+		},
+		{
 			name:             "FieldError",
 			err:              &FieldError{},
 			expectedRestCode: ValidationError,
