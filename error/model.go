@@ -145,6 +145,10 @@ func TranslateError(container RestErrorContainer, err error) {
 		case codes.PermissionDenied:
 			restError = &RestError{Code: NotAuthorized, Message: statusError.Message()}
 			httpStatus = http.StatusForbidden
+		case codes.OutOfRange:
+			fallthrough
+		case codes.InvalidArgument:
+			fallthrough
 		case codes.AlreadyExists:
 			fallthrough
 		case codes.FailedPrecondition:
