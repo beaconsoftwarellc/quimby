@@ -218,6 +218,10 @@ func (context *Context) valuesToArray(fieldType reflect.Type, values []string) [
 			}
 			return i
 		}
+	} else if elemKind == reflect.Bool {
+		coerce = func(v string) interface{} {
+			return v == "true"
+		}
 	} else if elemKind != reflect.String {
 		log.Warnf("valuesToArray recieved unhandled kind %v", elemKind)
 		return nil
@@ -260,6 +264,9 @@ func (context *Context) valuesToObject(values url.Values, target interface{}) er
 				log.Warnf("error parsing int for field name '%s' and value '%s'",
 					fieldName, queryValues[0])
 			}
+		case reflect.Bool:
+			valueMap[fieldName] = queryValues[0] == "true"
+
 		default:
 			log.Warnf("unhandled kind %v will be omitted from url values", fieldType)
 		}
