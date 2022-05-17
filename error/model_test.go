@@ -60,8 +60,8 @@ func TestTranslateError(t *testing.T) {
 		{
 			name:             "codes.AlreadyExists",
 			err:              status.Error(codes.AlreadyExists, ""),
-			expectedRestCode: ValidationError,
-			expectedStatus:   http.StatusBadRequest,
+			expectedRestCode: AlreadyExists,
+			expectedStatus:   http.StatusConflict,
 		},
 		{
 			name:             "codes.PermissionDenied",

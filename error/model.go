@@ -29,6 +29,8 @@ const (
 	SystemError = "system-error"
 	// NotFound indicates that the requested resource was not found
 	NotFound = "not-found"
+	// AlreadyExists indicates that the requested resource already exist
+	AlreadyExists = "already-exists"
 )
 
 // RestError represents the standard error returned by the API Gateway
@@ -145,11 +147,12 @@ func TranslateError(container RestErrorContainer, err error) {
 		case codes.PermissionDenied:
 			restError = &RestError{Code: NotAuthorized, Message: statusError.Message()}
 			httpStatus = http.StatusForbidden
+		case codes.AlreadyExists:
+			restError = &RestError{Code: AlreadyExists, Message: statusError.Message()}
+			httpStatus = http.StatusConflict
 		case codes.OutOfRange:
 			fallthrough
 		case codes.InvalidArgument:
-			fallthrough
-		case codes.AlreadyExists:
 			fallthrough
 		case codes.FailedPrecondition:
 			restError = &RestError{Code: ValidationError, Message: statusError.Message()}
