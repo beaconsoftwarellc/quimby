@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -106,17 +107,25 @@ func TestCreateContext(t *testing.T) {
 	u, _ := url.Parse("http://127.0.0.1/")
 
 	w := testResponseWriter{}
-	r := http.Request{
+	r := &http.Request{
 		URL:        u,
 		RequestURI: u.RequestURI(),
 	}
+
+	r = r.WithContext(context.WithValue(context.Background(), "key", "value"))
+
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
-	context.Extended["foo"] = "bar"
+	qCtx := CreateContext(w, r, router)
+	qCtx.Extended["foo"] = "bar"
 
-	assert.False(context.HasError())
+	assert.False(qCtx.HasError())
+
+	assert.Implements((*context.Context)(nil), qCtx)
+	assert.NotNil(qCtx.Context)
+
+	assert.Equal(qCtx.Value("key"), "value")
 }
 
 func TestCreateContextWithFailingAuth(t *testing.T) {

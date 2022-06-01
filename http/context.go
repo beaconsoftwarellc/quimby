@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -47,6 +48,7 @@ func (err *NoContentError) Trace() []string {
 // Context serves as a structure that tracks the state of a given http Request
 // Response chain.
 type Context struct {
+	context.Context
 	URIParameters map[string]string
 	URLParameters url.Values
 	URI           string
@@ -110,47 +112,53 @@ func (context *Context) SetResponse(model interface{}, status int) bool {
 func CreateContext(writer http.ResponseWriter, request *http.Request,
 	router Router) *Context {
 	var err error
-	context := &Context{Request: request, Extended: make(map[string]interface{})}
-	context.Response = writer
-	context.URL = request.URL
-	context.URI = request.RequestURI
-	context.Method = request.Method
-	context.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
+	qctx := &Context{Request: request, Extended: make(map[string]interface{})}
+	qctx.Response = writer
+	qctx.URL = request.URL
+	qctx.URI = request.RequestURI
+	qctx.Method = request.Method
+	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
+
+	if ctx := request.Context(); ctx != nil {
+		qctx.Context = ctx
+	} else {
+		qctx.Context = context.Background()
+	}
 
 	if err != nil {
 		// take a hard stance on malformed URL's
-		context.SetError(qerror.NewRestError(qerror.MalformedURL,
+		qctx.SetError(qerror.NewRestError(qerror.MalformedURL,
 			fmt.Sprintf("Malformed URL Parameters '%s'.", request.URL), nil),
 			http.StatusBadRequest)
-		return context
+		return qctx
 	}
 
-	cleanPath := strings.Split(context.URI, "?")[0]
+	cleanPath := strings.Split(qctx.URI, "?")[0]
 	cleanPath = strings.Trim(cleanPath, " /")
-	context.Route, err = router.FindRouteForPath(cleanPath)
-	if err != nil || context.Route == nil {
-		context.SetError(qerror.NewRestError(qerror.InvalidRoute, "", nil), http.StatusBadRequest)
-		return context
+	qctx.Route, err = router.FindRouteForPath(cleanPath)
+	if err != nil || qctx.Route == nil {
+		qctx.SetError(qerror.NewRestError(qerror.InvalidRoute, "", nil), http.StatusBadRequest)
+		return qctx
 	}
 
-	context.URIParameters = make(map[string]string)
+	qctx.URIParameters = make(map[string]string)
 	if !stringutil.IsWhiteSpace(cleanPath) {
-		context.URIParameters, err = stringutil.Detemplate(context.Route.TemplateRoute, cleanPath)
+		qctx.URIParameters, err = stringutil.Detemplate(qctx.Route.TemplateRoute, cleanPath)
 		if err != nil {
-			context.SetError(qerror.NewRestError(qerror.InvalidRoute, "", nil), http.StatusInternalServerError)
-			return context
+			qctx.SetError(qerror.NewRestError(qerror.InvalidRoute, "", nil), http.StatusInternalServerError)
+			return qctx
 		}
 	}
 	var ok bool
-	if http.MethodOptions != context.Request.Method {
-		if context.Authentication, ok = context.Route.Controller.Authenticate(context); !ok {
-			context.SetError(
+	if http.MethodOptions != qctx.Request.Method {
+		if qctx.Authentication, ok = qctx.Route.Controller.Authenticate(qctx); !ok {
+			qctx.SetError(
 				qerror.NewRestError(qerror.AuthenticationFailed,
 					InvalidCredentialsErrorMessage, nil), http.StatusUnauthorized)
 		}
 	}
 
-	return context
+	return qctx
 }
 
 // InvalidCredentialsErrorMessage is returned when Credentials are invalid
