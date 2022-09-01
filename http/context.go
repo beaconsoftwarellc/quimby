@@ -240,6 +240,14 @@ func (context *Context) valuesToArray(fieldType reflect.Type, values []string) [
 	return anon
 }
 
+func breakUpArrayValuedParameter(values []string) []string {
+	newValues := make([]string, 0, len(values))
+	for i := 0; i < len(values); i++ {
+		newValues = append(newValues, strings.Split(values[i], ",")...)
+	}
+	return newValues
+}
+
 func (context *Context) valuesToObject(values url.Values, target interface{}) error {
 	var err error
 	fieldMap := context.inspectModel(target)
@@ -247,7 +255,9 @@ func (context *Context) valuesToObject(values url.Values, target interface{}) er
 	for fieldName, fieldType := range fieldMap {
 		urlFieldName := stringutil.Underscore(fieldName)
 		queryValues := values[urlFieldName]
-		queryValues = append(queryValues, values[urlFieldName+"[]"]...)
+		queryValues = append(queryValues,
+			breakUpArrayValuedParameter(values[urlFieldName+"[]"])...)
+
 		if len(queryValues) == 0 {
 			continue
 		}
