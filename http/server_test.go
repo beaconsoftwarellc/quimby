@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/beaconsoftwarellc/gadget/stringutil"
-	qerror "github.com/beaconsoftwarellc/quimby/error"
+	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
 )
 
 /******************************************************

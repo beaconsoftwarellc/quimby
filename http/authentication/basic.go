@@ -5,7 +5,7 @@ import (
 
 	"github.com/beaconsoftwarellc/gadget/crypto"
 	"github.com/beaconsoftwarellc/gadget/stringutil"
-	"github.com/beaconsoftwarellc/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/v2/http"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 
 	"github.com/beaconsoftwarellc/gadget/log"
 	"github.com/beaconsoftwarellc/gadget/stringutil"
-	qerror "github.com/beaconsoftwarellc/quimby/error"
+	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
 )
 
 // HealthCheckRoute is the default URI for health checks

@@ -15,7 +15,7 @@ import (
 	"github.com/beaconsoftwarellc/gadget/errors"
 	"github.com/beaconsoftwarellc/gadget/log"
 	"github.com/beaconsoftwarellc/gadget/stringutil"
-	qerror "github.com/beaconsoftwarellc/quimby/error"
+	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
 )
 
 // NoContentError is returned when Read is called and the Request has a 0

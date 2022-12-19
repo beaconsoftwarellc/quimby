@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/beaconsoftwarellc/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/v2/http"
 )
 
 // BasicAuthValidator handles verification of Username/Password

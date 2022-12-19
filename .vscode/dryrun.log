@@ -1,0 +1,8 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/anthonypynes/Projects/src/github.com/beaconsoftwarellc/quimby'
+ 
+echo "go test package"
+go mod tidy
+go test -cover -p 1 ./...
+make: Leaving directory '/home/anthonypynes/Projects/src/github.com/beaconsoftwarellc/quimby'
+ 

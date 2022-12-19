@@ -3,7 +3,7 @@ package authentication
 import (
 	"time"
 
-	"github.com/beaconsoftwarellc/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/v2/http"
 )
 
 const Reject = "reject"

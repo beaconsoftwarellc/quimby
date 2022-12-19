@@ -4,7 +4,7 @@ import (
 	nhttp "net/http"
 	"time"
 
-	"github.com/beaconsoftwarellc/quimby/http"
+	"github.com/beaconsoftwarellc/quimby/v2/http"
 )
 
 // HealthCheckController responds to Get requests with a JSON object representing
