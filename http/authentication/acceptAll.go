@@ -3,7 +3,7 @@ package authentication
 import (
 	"time"
 
-	"github.com/beaconsoftwarellc/gadget/stringutil"
+	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	"github.com/beaconsoftwarellc/quimby/v2/http"
 )
 

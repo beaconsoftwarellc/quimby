@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/beaconsoftwarellc/gadget/errors"
-	"github.com/beaconsoftwarellc/gadget/log"
-	"github.com/beaconsoftwarellc/gadget/stringutil"
+	"github.com/beaconsoftwarellc/gadget/v2/errors"
+	"github.com/beaconsoftwarellc/gadget/v2/log"
+	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
 )
 

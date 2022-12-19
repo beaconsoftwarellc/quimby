@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/beaconsoftwarellc/gadget/stringutil"
+	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
 )
 
