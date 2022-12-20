@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/beaconsoftwarellc/gadget/errors"
+	"github.com/beaconsoftwarellc/gadget/v2/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

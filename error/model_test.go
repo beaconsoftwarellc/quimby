@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/beaconsoftwarellc/gadget/generator"
-	"github.com/beaconsoftwarellc/gadget/stringutil"
+	"github.com/beaconsoftwarellc/gadget/v2/generator"
+	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

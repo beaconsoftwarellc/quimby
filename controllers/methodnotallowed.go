@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	http2 "github.com/beaconsoftwarellc/quimby/http"
 	"net/http"
 
-	qerror "github.com/beaconsoftwarellc/quimby/error"
+	http2 "github.com/beaconsoftwarellc/quimby/v2/http"
+
+	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
 )
 
 // MethodNotAllowedController serves as a base for controllers that do not
