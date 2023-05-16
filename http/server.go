@@ -96,7 +96,7 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 
 	context.Response.WriteHeader(context.responseStatus)
 	_, err := context.Response.Write(b)
-	log.Error(err)
+	log.Warn(err)
 }
 
 func (server *RESTServer) completeRequestJSON(context *Context) {
@@ -117,7 +117,8 @@ func (server *RESTServer) completeRequestJSON(context *Context) {
 		}
 	}
 	context.Response.WriteHeader(context.responseStatus)
-	context.Response.Write(b)
+	_, err := context.Response.Write(b)
+	log.Warn(err)
 }
 
 // ListenAndServe starts a http server listening on the address specified
