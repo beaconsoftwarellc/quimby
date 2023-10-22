@@ -16,6 +16,7 @@ import (
 	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
+	"github.com/beaconsoftwarellc/quimby/v2/http/multipartform"
 )
 
 // NoContentError is returned when Read is called and the Request has a 0
@@ -304,8 +305,8 @@ func (context *Context) ReadObject(target interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	contentType, _, err := mime.ParseMediaType(context.Request.Header.Get(contentTypeHeader))
+	contentType, _, err := mime.
+		ParseMediaType(context.Request.Header.Get(contentTypeHeader))
 	if nil != err {
 		context.SetError(qerror.NewRestError(qerror.ValidationError, err.Error(), nil), http.StatusNotAcceptable)
 		return err
@@ -313,12 +314,19 @@ func (context *Context) ReadObject(target interface{}) error {
 	switch contentType {
 	case contentTypeForm:
 		err = context.readForm(body, target)
+	case contentTypeMultiPartFormData:
+		fallthrough
+	case contentTypeMultiPartFormData1:
+		err = context.Request.
+			ParseMultipartForm(multipartform.MaxMemoryBytes)
+		if nil != err {
+			err = multipartform.Unmarshal(context.Request.MultipartForm, target)
+		}
 	case contentTypeJSON:
 		err = context.readJSON(body, target)
 	default:
 		err = errors.New("Unsupported contentType (%s) provided", contentType)
 	}
-
 	if nil != err {
 		context.SetError(qerror.NewRestError(qerror.ValidationError, err.Error(), nil), http.StatusNotAcceptable)
 	}
@@ -327,8 +335,19 @@ func (context *Context) ReadObject(target interface{}) error {
 }
 
 // Write writes a string to the response body.
-func (context *Context) Write(s string) {
-	context.Response.Write([]byte(s))
+func (context *Context) Write(bytes []byte) error {
+	var (
+		lastWrite int
+		err       error
+	)
+	for written := 0; written < len(bytes); written += lastWrite {
+		toWrite := bytes[written:]
+		lastWrite, err = context.Response.Write(toWrite)
+		if nil != err {
+			return err
+		}
+	}
+	return nil
 }
 
 // ReadQueryParams converts URL Parameters into an Object

@@ -112,7 +112,8 @@ func TestCreateContext(t *testing.T) {
 		RequestURI: u.RequestURI(),
 	}
 
-	r = r.WithContext(context.WithValue(context.Background(), "key", "value"))
+	key := struct{ Name string }{Name: "key"}
+	r = r.WithContext(context.WithValue(context.Background(), key, "value"))
 
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
@@ -125,7 +126,7 @@ func TestCreateContext(t *testing.T) {
 	assert.Implements((*context.Context)(nil), qCtx)
 	assert.NotNil(qCtx.Context)
 
-	assert.Equal(qCtx.Value("key"), "value")
+	assert.Equal(qCtx.Value(key), "value")
 }
 
 func TestCreateContextWithFailingAuth(t *testing.T) {
@@ -198,7 +199,7 @@ func TestCreateContextBadTemplate(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "foo/{{id}}{{id2}}")
 	router := CreateRouter(&c)
-	router.AddController(&c)
+	assert.NoError(router.AddController(&c))
 	context := CreateContext(w, &r, router)
 
 	assert.True(context.HasError())
@@ -219,7 +220,7 @@ func TestCreateContextQueryStringNotInParameters(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "foo/{{id}}")
 	router := CreateRouter(&c)
-	router.AddController(&c)
+	assert.NoError(router.AddController(&c))
 
 	context := CreateContext(w, &r, router)
 	assert.False(context.HasError())
@@ -644,12 +645,46 @@ func TestReadObject_withForm_EmptyQueryParam(t *testing.T) {
 func TestWrite(t *testing.T) {
 	assert := assert.New(t)
 
-	writerBody := make([]byte, 20)
+	writerBody := make([]byte, 0, 20)
 	w := testResponseWriter{Body: &writerBody}
 	context := Context{
 		Response: w,
 	}
 
-	context.Write("foo")
+	assert.NoError(context.Write([]byte("foo")))
 	assert.Equal("foo", stringutil.NullTerminatedString(writerBody))
+}
+
+func Test_context_valuesToObject(t *testing.T) {
+	assert := assert.New(t)
+
+	v := url.Values{}
+	v.Add("name", "RoundyMcTrashcan")
+	v.Add("grant", "auth_code")
+
+	expected := TestModel{
+		Name: "RoundyMcTrashcan",
+	}
+
+	b := FakeBody{
+		Content: v.Encode(),
+		Error:   io.EOF,
+	}
+	r := http.Request{
+		Method: http.MethodPost,
+		Header: map[string][]string{
+			"Content-Type": {"application/x-www-form-urlencoded"},
+		},
+		ContentLength: int64(len(b.Content)),
+		Body:          b,
+	}
+	context := Context{
+		Request: &r,
+	}
+	model := TestModel{}
+	err := context.ReadObject(&model)
+
+	assert.Equal(expected, model)
+	assert.Nil(err)
+
 }

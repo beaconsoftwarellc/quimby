@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/beaconsoftwarellc/gadget/v2/generator"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
@@ -28,8 +29,9 @@ func (rw testResponseWriter) Header() http.Header {
 }
 
 func (rw testResponseWriter) Write(b []byte) (int, error) {
-	copy(*rw.Body, b)
-	return 1, nil
+	toWrite := b[:generator.Int()%len(b)+1]
+	*rw.Body = append(*rw.Body, toWrite...)
+	return len(toWrite), nil
 }
 
 func (rw testResponseWriter) WriteHeader(i int) {
@@ -79,9 +81,9 @@ func TestServeHTTP(t *testing.T) {
 	}
 
 	controller := NewTestController("HTTP Test")
-	controller.Routes = append(controller.Routes, "/")
+	controller.Routes = append(controller.Routes, "route")
 	server := CreateRESTServer(":8080", &controller)
-	server.Router.AddController(&controller)
+	assert.NoError(server.Router.AddController(&controller))
 
 	methods := []string{
 		http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete, http.MethodOptions,
@@ -102,7 +104,7 @@ func TestServeHTTP(t *testing.T) {
 func TestCompleteRequestResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	writerBody := make([]byte, 200)
+	writerBody := make([]byte, 0, 200)
 	writerStatus := 0
 
 	w := testResponseWriter{Body: &writerBody, Status: &writerStatus}
@@ -122,7 +124,7 @@ func TestCompleteRequestResponse(t *testing.T) {
 func TestCompleteRequestError(t *testing.T) {
 	assert := assert.New(t)
 
-	writerBody := make([]byte, 200)
+	writerBody := make([]byte, 0, 200)
 	writerStatus := 0
 
 	w := testResponseWriter{Body: &writerBody, Status: &writerStatus}
@@ -143,7 +145,7 @@ func TestCompleteRequestError(t *testing.T) {
 func TestCompleteRequestErrorCannotMarshall(t *testing.T) {
 	assert := assert.New(t)
 
-	writerBody := make([]byte, 200)
+	writerBody := make([]byte, 0, 200)
 	writerStatus := 0
 
 	w := testResponseWriter{Body: &writerBody, Status: &writerStatus}
@@ -166,7 +168,7 @@ func TestCompleteRequestErrorCannotMarshall(t *testing.T) {
 func TestCompleteRequestResponseCannotMarshal(t *testing.T) {
 	assert := assert.New(t)
 
-	writerBody := make([]byte, 200)
+	writerBody := make([]byte, 0, 200)
 	writerStatus := 0
 
 	w := testResponseWriter{Body: &writerBody, Status: &writerStatus}

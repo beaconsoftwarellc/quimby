@@ -3,6 +3,8 @@ package http
 import (
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 /******************************************************
@@ -126,6 +128,7 @@ func TestBadRoute(t *testing.T) {
 }
 
 func TestAddRoute(t *testing.T) {
+	assert := assert.New(t)
 	r := CreateRouter(nil)
 	expectedID := "controller1"
 	controllerRoute := "controllerRoute1"
@@ -133,8 +136,8 @@ func TestAddRoute(t *testing.T) {
 		Routes: []string{controllerRoute}}
 	controller2 := &TestController{ID: "foo", Routes: []string{"testing"}}
 	expected := "route"
-	r.AddRoute(expected, expectedController)
-	r.AddRoute("route2", controller2)
+	assert.NoError(r.AddRoute(expected, expectedController))
+	assert.NoError(r.AddRoute("route2", controller2))
 
 	// Controllers route should not have been added
 	_, routeAdded := r.RouteTree.SubRoutes[controllerRoute]
@@ -228,12 +231,13 @@ func testRoute(router Router, route string, expectedID string, t *testing.T) {
 }
 
 func TestAddController(t *testing.T) {
+	assert := assert.New(t)
 	r := CreateRouter(nil)
 	expected := "TestAddController"
 	route1 := "bar/baz"
 	route2 := "foo/bar"
 	controller := &TestController{ID: expected, Routes: []string{route1, route2}}
-	r.AddController(controller)
+	assert.NoError(r.AddController(controller))
 	testRoute(r, route1, expected, t)
 	testRoute(r, route2, expected, t)
 }
@@ -319,11 +323,12 @@ func TestFindControllerSinglePathExactOverWild(t *testing.T) {
 }
 
 func TestFindControllerNoRoute(t *testing.T) {
+	assert := assert.New(t)
 	r := CreateRouter(nil)
 	controller := &TestController{ID: "TestFindControllerNoRoute",
 		Routes: []string{}}
-	r.AddRoute("route/*/something", controller)
-	r.AddRoute("route/awef/something", controller)
+	assert.NoError(r.AddRoute("route/*/something", controller))
+	assert.NoError(r.AddRoute("route/awef/something", controller))
 	_, err := r.FindRouteForPath("does/not/exist")
 	if err == nil {
 		t.Errorf("Expected no route for path error.")
@@ -331,11 +336,12 @@ func TestFindControllerNoRoute(t *testing.T) {
 }
 
 func TestFindControllerNoRoutePartialMatch(t *testing.T) {
+	assert := assert.New(t)
 	r := CreateRouter(nil)
 	controller := &TestController{ID: "TestFindControllerNoRoute",
 		Routes: []string{}}
-	r.AddRoute("route/*/something", controller)
-	r.AddRoute("route/awef/something", controller)
+	assert.NoError(r.AddRoute("route/*/something", controller))
+	assert.NoError(r.AddRoute("route/awef/something", controller))
 	node, err := r.FindRouteForPath("route/foo/")
 	if err == nil {
 		t.Errorf("Expected no route for path error. Got node with Value: %s",
