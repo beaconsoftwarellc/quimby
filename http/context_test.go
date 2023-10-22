@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -9,9 +10,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
+	"github.com/beaconsoftwarellc/quimby/v2/http/multipartform/testdata"
 )
 
 type TestModel struct {
@@ -687,4 +690,35 @@ func Test_context_valuesToObject(t *testing.T) {
 	assert.Equal(expected, model)
 	assert.Nil(err)
 
+}
+
+type TestStruct struct {
+	Foo string
+	Bar int
+	Baz []string
+}
+
+type FormDataWithStructs struct {
+	PtrTestStruct *TestStruct
+	TestStruct    TestStruct
+}
+
+func Test_context_GetObject_MultipartForm(t *testing.T) {
+	assert := assert.New(t)
+
+	reader := bytes.NewReader([]byte(testdata.FormDataWithStructs))
+	req, _ := http.NewRequest(http.MethodPost, "", reader)
+	req.Header.Set("Content-Type", "multipart/form-data; boundary=xYzZY")
+	req.Header.Set("User-Agent", "Test")
+
+	context := &Context{Request: req}
+	target := &FormDataWithStructs{}
+	require.NoError(t, context.ReadObject(target))
+	require.NotNil(t, target.PtrTestStruct)
+	assert.Equal("qux", target.PtrTestStruct.Foo)
+	assert.Equal(1, target.PtrTestStruct.Bar)
+	assert.Equal([]string{"elm1", "elm2"}, target.PtrTestStruct.Baz)
+	assert.Equal("quux", target.TestStruct.Foo)
+	assert.Equal(2, target.TestStruct.Bar)
+	assert.Equal([]string{"1mle", "2mle"}, target.TestStruct.Baz)
 }

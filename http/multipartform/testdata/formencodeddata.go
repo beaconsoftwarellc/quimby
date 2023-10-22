@@ -21,7 +21,8 @@ I am a dimunitive dispenser of flavor infused water
 Content-Disposition: form-data; name="my_array[]"
 
 short and stout
---xYzZY--`
+--xYzZY--
+`
 
 	FormDataWithStructs = `--xYzZY
 Content-Disposition: form-data; name="ptr_test_struct"
@@ -31,7 +32,8 @@ Content-Disposition: form-data; name="ptr_test_struct"
 Content-Disposition: form-data; name="test_struct"
 
 { "Foo": "quux", "Bar": 2, "Baz": ["1mle", "2mle"]}
---xYzZY--`
+--xYzZY--
+`
 
 	FormDataErryThang = `--xYzZY
 Content-Disposition: form-data; name="ptr_test_struct"

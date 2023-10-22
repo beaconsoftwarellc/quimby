@@ -198,20 +198,24 @@ func (context *Context) readJSON(body []byte, target interface{}) error {
 // ReadObject reads the body of the Request and unmarshals an object the
 // same type as the passed implementation of interface{}
 func (context *Context) ReadObject(target interface{}) error {
-	body, err := context.Read()
-
-	if err != nil {
-		return err
-	}
-	contentType, _, err := mime.
+	var (
+		body        []byte
+		err         error
+		contentType string
+	)
+	contentType, _, err = mime.
 		ParseMediaType(context.Request.Header.Get(contentTypeHeader))
 	if nil != err {
-		context.SetError(qerror.NewRestError(qerror.ValidationError, err.Error(), nil), http.StatusNotAcceptable)
+		context.SetError(qerror.NewRestError(qerror.ValidationError,
+			err.Error(), nil), http.StatusNotAcceptable)
 		return err
 	}
 	switch contentType {
 	case contentTypeForm:
-		err = urlencodedform.Unmarshal(body, target)
+		body, err = context.Read()
+		if nil == err {
+			err = urlencodedform.Unmarshal(body, target)
+		}
 	case contentTypeMultiPartFormData:
 		fallthrough
 	case contentTypeMultiPartFormData1:
@@ -221,12 +225,16 @@ func (context *Context) ReadObject(target interface{}) error {
 			err = multipartform.Unmarshal(context.Request.MultipartForm, target)
 		}
 	case contentTypeJSON:
-		err = context.readJSON(body, target)
+		body, err = context.Read()
+		if nil == err {
+			err = context.readJSON(body, target)
+		}
 	default:
 		err = errors.New("Unsupported contentType (%s) provided", contentType)
 	}
 	if nil != err {
-		context.SetError(qerror.NewRestError(qerror.ValidationError, err.Error(), nil), http.StatusNotAcceptable)
+		context.SetError(qerror.NewRestError(qerror.ValidationError,
+			err.Error(), nil), http.StatusNotAcceptable)
 	}
 
 	return err
