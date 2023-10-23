@@ -203,6 +203,9 @@ func (context *Context) ReadObject(target interface{}) error {
 		err         error
 		contentType string
 	)
+	if context.Request.ContentLength <= 0 {
+		return NewNoContentError("", "")
+	}
 	contentType, _, err = mime.
 		ParseMediaType(context.Request.Header.Get(contentTypeHeader))
 	if nil != err {
