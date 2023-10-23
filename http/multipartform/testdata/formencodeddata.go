@@ -23,7 +23,7 @@ Content-Disposition: form-data; name="my_array[]"
 short and stout
 --xYzZY--
 `
-
+	// FormDataWithStructs for testing multipart encoded form with structs
 	FormDataWithStructs = `--xYzZY
 Content-Disposition: form-data; name="ptr_test_struct"
 
@@ -34,7 +34,8 @@ Content-Disposition: form-data; name="test_struct"
 { "Foo": "quux", "Bar": 2, "Baz": ["1mle", "2mle"]}
 --xYzZY--
 `
-
+	// FormDataErryThang for testing multipart encoded form with
+	// everything we support
 	FormDataErryThang = `--xYzZY
 Content-Disposition: form-data; name="ptr_test_struct"
 
