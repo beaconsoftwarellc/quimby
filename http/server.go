@@ -55,9 +55,11 @@ func (server *RESTServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 const (
-	contentTypeHeader = "Content-Type"
-	contentTypeJSON   = "application/json"
-	contentTypeForm   = "application/x-www-form-urlencoded"
+	contentTypeHeader             = "Content-Type"
+	contentTypeJSON               = "application/json"
+	contentTypeForm               = "application/x-www-form-urlencoded"
+	contentTypeMultiPartFormData  = "multipart/form-data"
+	contentTypeMultiPartFormData1 = "multipart/mixed"
 )
 
 // CompleteRequest generates output and completes the Request
@@ -95,8 +97,7 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 	}
 
 	context.Response.WriteHeader(context.responseStatus)
-	_, err := context.Response.Write(b)
-	log.Warn(err)
+	_ = log.Warn(context.Write(b))
 }
 
 func (server *RESTServer) completeRequestJSON(context *Context) {
@@ -117,8 +118,8 @@ func (server *RESTServer) completeRequestJSON(context *Context) {
 		}
 	}
 	context.Response.WriteHeader(context.responseStatus)
-	_, err := context.Response.Write(b)
-	log.Warn(err)
+	err := context.Write(b)
+	_ = log.Warn(err)
 }
 
 // ListenAndServe starts a http server listening on the address specified

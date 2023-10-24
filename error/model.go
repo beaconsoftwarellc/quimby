@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/beaconsoftwarellc/gadget/v2/errors"
+	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -158,6 +159,7 @@ func TranslateError(container RestErrorContainer, err error) {
 			restError = &RestError{Code: ValidationError, Message: statusError.Message()}
 			httpStatus = http.StatusBadRequest
 		default:
+			log.Errorf("[QMY.ERR.162] unhandled system error: %s", err)
 			restError = &RestError{Code: SystemError, Message: statusError.Message()}
 			httpStatus = http.StatusInternalServerError
 		}
@@ -173,6 +175,7 @@ func TranslateError(container RestErrorContainer, err error) {
 			restError = &RestError{Code: AuthenticationFailed, Message: err.Error()}
 			httpStatus = http.StatusUnauthorized
 		default:
+			log.Errorf("[QMY.ERR.178] unhandled system error: %s", err)
 			restError = &RestError{Code: SystemError, Message: err.Error()}
 			httpStatus = http.StatusInternalServerError
 		}
