@@ -1,4 +1,4 @@
-package error
+package errors
 
 import (
 	"fmt"
@@ -13,6 +13,8 @@ import (
 const (
 	// CannotBeBlank indicates a field that was submitted blank, but is required
 	CannotBeBlank = "cannot-be-blank"
+	// Canceled indicates the operation was canceled (typically by the caller).
+	Canceled = "canceled"
 	// ValidationError indicates that a validation rule such as min / max value was violated
 	ValidationError = "validation-error"
 	// MethodNotAllowed indicates that the attempted VERB is not implemented for that endpoint
@@ -158,6 +160,14 @@ func TranslateError(container RestErrorContainer, err error) {
 		case codes.FailedPrecondition:
 			restError = &RestError{Code: ValidationError, Message: statusError.Message()}
 			httpStatus = http.StatusBadRequest
+		case codes.Canceled:
+			restError = &RestError{Code: Canceled, Message: statusError.Message()}
+			// it may have been the caller or someone internally that cancelled the
+			// request. So either way we are covered with StatusInternalServerError.
+			httpStatus = http.StatusInternalServerError
+		case codes.DeadlineExceeded:
+			restError = &RestError{Code: SystemError, Message: statusError.Message()}
+			httpStatus = http.StatusInternalServerError
 		default:
 			log.Errorf("[QMY.ERR.162] unhandled system error: %s", err)
 			restError = &RestError{Code: SystemError, Message: statusError.Message()}
