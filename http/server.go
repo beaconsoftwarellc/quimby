@@ -32,7 +32,7 @@ func CreateRESTServer(address string, rootController Controller) RESTServer {
 // ServeHTTP processes the HTTP Request
 func (server *RESTServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	context := CreateContext(w, r, server.Router)
+	context := CreateContext(w, r, server.Router, nil)
 	if !context.HasError() {
 		switch context.Request.Method {
 		case http.MethodGet:

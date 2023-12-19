@@ -30,6 +30,7 @@ type MockRestErrorContainer struct {
 func (mock *MockRestErrorContainer) SetError(e *RestError, s int) {
 	mock.SetErrorRestError = e
 	mock.SetErrorStatus = s
+
 }
 
 func TestTranslateError(t *testing.T) {

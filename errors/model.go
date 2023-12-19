@@ -85,6 +85,7 @@ func (err *FieldError) Error() string {
 
 // RestErrorContainer holds a RestError
 type RestErrorContainer interface {
+	// SetError to the passed error and status code
 	SetError(*RestError, int)
 }
 
@@ -162,8 +163,9 @@ func TranslateError(container RestErrorContainer, err error) {
 			httpStatus = http.StatusBadRequest
 		case codes.Canceled:
 			restError = &RestError{Code: Canceled, Message: statusError.Message()}
-			// it may have been the caller or someone internally that cancelled the
-			// request. So either way we are covered with StatusInternalServerError.
+			// fairly certain this is the result of a client side timeout however,
+			// it may have been someone internally that cancelled the request.
+			// So either way we are covered with StatusInternalServerError.
 			httpStatus = http.StatusInternalServerError
 		case codes.DeadlineExceeded:
 			restError = &RestError{Code: SystemError, Message: statusError.Message()}

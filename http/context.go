@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/beaconsoftwarellc/gadget/v2/errors"
+	"github.com/beaconsoftwarellc/gadget/v2/generator"
 	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/errors"
@@ -54,6 +55,7 @@ type Context struct {
 	URI           string
 	URL           *url.URL
 	Method        string
+	Log           log.Logger
 
 	Request  *http.Request
 	Response http.ResponseWriter
@@ -70,6 +72,21 @@ type Context struct {
 	bodyRead bool
 }
 
+// GetMethod from the request on this context
+func (context *Context) GetMethod() string {
+	return context.Method
+}
+
+// GetUrl from the request on this context
+func (context *Context) GetUrl() *url.URL {
+	return context.URL
+}
+
+// GetLog associated with this context
+func (context *Context) GetLog() log.Logger {
+	return context.Log
+}
+
 // Status returns the HTTP status of the response
 func (context *Context) Status() int {
 	return context.responseStatus
@@ -79,6 +96,10 @@ func (context *Context) Status() int {
 func (context *Context) SetError(err *qerror.RestError, status int) {
 	context.responseStatus = status
 	context.Error = err
+	if http.StatusInternalServerError == status {
+		context.Log.Errorf("[HTTP.CTX.100] InternalServerError encountered "+
+			"servicing request %s %s: %s", context.Method, context.URL, err)
+	}
 }
 
 // HasError checks if there is an Error set on the Context
@@ -90,7 +111,8 @@ func (context *Context) HasError() bool {
 // Primary use case is to add a series of validation type errors
 func (context *Context) AddError(err qerror.FieldError) {
 	if !context.HasError() {
-		context.SetError(qerror.NewRestError(qerror.ValidationError, "", nil), http.StatusBadRequest)
+		context.SetError(qerror.NewRestError(qerror.ValidationError, "", nil),
+			http.StatusBadRequest)
 	}
 	context.Error.AddDetail(err)
 }
@@ -110,7 +132,7 @@ func (context *Context) SetResponse(model interface{}, status int) bool {
 // pair, and router. The router is used for detemplating and populating the
 // URIParameters
 func CreateContext(writer http.ResponseWriter, request *http.Request,
-	router Router) *Context {
+	router Router, logger log.Logger) *Context {
 	var err error
 	qctx := &Context{Request: request, Extended: make(map[string]interface{})}
 	qctx.Response = writer
@@ -118,6 +140,13 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 	qctx.URI = request.RequestURI
 	qctx.Method = request.Method
 	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
+	if nil == logger {
+		logger = log.Global()
+	}
+	// pull off a new logger and set the session so we can trace
+	// any log messages off this context
+	qctx.Log = logger.New("http")
+	qctx.Log.SetSessionID(generator.String(10))
 
 	if ctx := request.Context(); ctx != nil {
 		qctx.Context = ctx
@@ -239,7 +268,6 @@ func (context *Context) ReadObject(target interface{}) error {
 		context.SetError(qerror.NewRestError(qerror.ValidationError,
 			err.Error(), nil), http.StatusNotAcceptable)
 	}
-
 	return err
 }
 
