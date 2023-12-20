@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -9,9 +10,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
-	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
+	qerror "github.com/beaconsoftwarellc/quimby/v2/errors"
+	"github.com/beaconsoftwarellc/quimby/v2/http/multipartform/testdata"
 )
 
 type TestModel struct {
@@ -112,12 +115,13 @@ func TestCreateContext(t *testing.T) {
 		RequestURI: u.RequestURI(),
 	}
 
-	r = r.WithContext(context.WithValue(context.Background(), "key", "value"))
+	key := struct{ Name string }{Name: "key"}
+	r = r.WithContext(context.WithValue(context.Background(), key, "value"))
 
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	qCtx := CreateContext(w, r, router)
+	qCtx := CreateContext(w, r, router, nil)
 	qCtx.Extended["foo"] = "bar"
 
 	assert.False(qCtx.HasError())
@@ -125,7 +129,7 @@ func TestCreateContext(t *testing.T) {
 	assert.Implements((*context.Context)(nil), qCtx)
 	assert.NotNil(qCtx.Context)
 
-	assert.Equal(qCtx.Value("key"), "value")
+	assert.Equal(qCtx.Value(key), "value")
 }
 
 func TestCreateContextWithFailingAuth(t *testing.T) {
@@ -141,7 +145,7 @@ func TestCreateContextWithFailingAuth(t *testing.T) {
 	c := NewNoAuthTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.AuthenticationFailed, context.Error.Code)
@@ -160,7 +164,7 @@ func TestCreateContextBadParameters(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.MalformedURL, context.Error.Code)
@@ -178,7 +182,7 @@ func TestCreateContextBadRoute(t *testing.T) {
 	}
 	c := NewTestController("HTTP Test")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.InvalidRoute, context.Error.Code)
@@ -198,8 +202,8 @@ func TestCreateContextBadTemplate(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "foo/{{id}}{{id2}}")
 	router := CreateRouter(&c)
-	router.AddController(&c)
-	context := CreateContext(w, &r, router)
+	assert.NoError(router.AddController(&c))
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.InvalidRoute, context.Error.Code)
@@ -219,9 +223,9 @@ func TestCreateContextQueryStringNotInParameters(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "foo/{{id}}")
 	router := CreateRouter(&c)
-	router.AddController(&c)
+	assert.NoError(router.AddController(&c))
 
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 	assert.False(context.HasError())
 
 	actual, ok := context.URIParameters["id"]
@@ -644,12 +648,77 @@ func TestReadObject_withForm_EmptyQueryParam(t *testing.T) {
 func TestWrite(t *testing.T) {
 	assert := assert.New(t)
 
-	writerBody := make([]byte, 20)
+	writerBody := make([]byte, 0, 20)
 	w := testResponseWriter{Body: &writerBody}
 	context := Context{
 		Response: w,
 	}
 
-	context.Write("foo")
+	assert.NoError(context.Write([]byte("foo")))
 	assert.Equal("foo", stringutil.NullTerminatedString(writerBody))
+}
+
+func Test_context_valuesToObject(t *testing.T) {
+	assert := assert.New(t)
+
+	v := url.Values{}
+	v.Add("name", "RoundyMcTrashcan")
+	v.Add("grant", "auth_code")
+
+	expected := TestModel{
+		Name: "RoundyMcTrashcan",
+	}
+
+	b := FakeBody{
+		Content: v.Encode(),
+		Error:   io.EOF,
+	}
+	r := http.Request{
+		Method: http.MethodPost,
+		Header: map[string][]string{
+			"Content-Type": {"application/x-www-form-urlencoded"},
+		},
+		ContentLength: int64(len(b.Content)),
+		Body:          b,
+	}
+	context := Context{
+		Request: &r,
+	}
+	model := TestModel{}
+	err := context.ReadObject(&model)
+
+	assert.Equal(expected, model)
+	assert.Nil(err)
+
+}
+
+type TestStruct struct {
+	Foo string
+	Bar int
+	Baz []string
+}
+
+type FormDataWithStructs struct {
+	PtrTestStruct *TestStruct
+	TestStruct    TestStruct
+}
+
+func Test_context_GetObject_MultipartForm(t *testing.T) {
+	assert := assert.New(t)
+
+	reader := bytes.NewReader([]byte(testdata.FormDataWithStructs))
+	req, _ := http.NewRequest(http.MethodPost, "", reader)
+	req.Header.Set("Content-Type", "multipart/form-data; boundary=xYzZY")
+	req.Header.Set("User-Agent", "Test")
+
+	context := &Context{Request: req}
+	target := &FormDataWithStructs{}
+	require.NoError(t, context.ReadObject(target))
+	require.NotNil(t, target.PtrTestStruct)
+	assert.Equal("qux", target.PtrTestStruct.Foo)
+	assert.Equal(1, target.PtrTestStruct.Bar)
+	assert.Equal([]string{"elm1", "elm2"}, target.PtrTestStruct.Baz)
+	assert.Equal("quux", target.TestStruct.Foo)
+	assert.Equal(2, target.TestStruct.Bar)
+	assert.Equal([]string{"1mle", "2mle"}, target.TestStruct.Baz)
 }

@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/beaconsoftwarellc/gadget/v2 v2.13.0
+	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.8.1
 	google.golang.org/grpc v1.53.0
 )

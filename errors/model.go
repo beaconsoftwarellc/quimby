@@ -1,10 +1,11 @@
-package error
+package errors
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/beaconsoftwarellc/gadget/v2/errors"
+	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -12,6 +13,8 @@ import (
 const (
 	// CannotBeBlank indicates a field that was submitted blank, but is required
 	CannotBeBlank = "cannot-be-blank"
+	// Canceled indicates the operation was canceled (typically by the caller).
+	Canceled = "canceled"
 	// ValidationError indicates that a validation rule such as min / max value was violated
 	ValidationError = "validation-error"
 	// MethodNotAllowed indicates that the attempted VERB is not implemented for that endpoint
@@ -82,6 +85,7 @@ func (err *FieldError) Error() string {
 
 // RestErrorContainer holds a RestError
 type RestErrorContainer interface {
+	// SetError to the passed error and status code
 	SetError(*RestError, int)
 }
 
@@ -157,7 +161,17 @@ func TranslateError(container RestErrorContainer, err error) {
 		case codes.FailedPrecondition:
 			restError = &RestError{Code: ValidationError, Message: statusError.Message()}
 			httpStatus = http.StatusBadRequest
+		case codes.Canceled:
+			restError = &RestError{Code: Canceled, Message: statusError.Message()}
+			// fairly certain this is the result of a client side timeout however,
+			// it may have been someone internally that cancelled the request.
+			// So either way we are covered with StatusInternalServerError.
+			httpStatus = http.StatusInternalServerError
+		case codes.DeadlineExceeded:
+			restError = &RestError{Code: SystemError, Message: statusError.Message()}
+			httpStatus = http.StatusInternalServerError
 		default:
+			log.Errorf("[QMY.ERR.162] unhandled system error: %s", err)
 			restError = &RestError{Code: SystemError, Message: statusError.Message()}
 			httpStatus = http.StatusInternalServerError
 		}
@@ -173,6 +187,7 @@ func TranslateError(container RestErrorContainer, err error) {
 			restError = &RestError{Code: AuthenticationFailed, Message: err.Error()}
 			httpStatus = http.StatusUnauthorized
 		default:
+			log.Errorf("[QMY.ERR.178] unhandled system error: %s", err)
 			restError = &RestError{Code: SystemError, Message: err.Error()}
 			httpStatus = http.StatusInternalServerError
 		}
