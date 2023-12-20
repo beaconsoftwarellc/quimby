@@ -16,7 +16,7 @@ import (
 func CreateTestContext(c qhttp.Controller, r *http.Request) (context *qhttp.Context) {
 	w := httptest.NewRecorder()
 	router := qhttp.CreateRouter(c)
-	context = qhttp.CreateContext(w, r, router)
+	context = qhttp.CreateContext(w, r, router, nil)
 	return context
 }
 

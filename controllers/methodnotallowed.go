@@ -5,7 +5,7 @@ import (
 
 	http2 "github.com/beaconsoftwarellc/quimby/v2/http"
 
-	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
+	qerror "github.com/beaconsoftwarellc/quimby/v2/errors"
 )
 
 // MethodNotAllowedController serves as a base for controllers that do not

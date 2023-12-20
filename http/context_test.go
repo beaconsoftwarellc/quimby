@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
-	qerror "github.com/beaconsoftwarellc/quimby/v2/error"
+	qerror "github.com/beaconsoftwarellc/quimby/v2/errors"
 	"github.com/beaconsoftwarellc/quimby/v2/http/multipartform/testdata"
 )
 
@@ -121,7 +121,7 @@ func TestCreateContext(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	qCtx := CreateContext(w, r, router)
+	qCtx := CreateContext(w, r, router, nil)
 	qCtx.Extended["foo"] = "bar"
 
 	assert.False(qCtx.HasError())
@@ -145,7 +145,7 @@ func TestCreateContextWithFailingAuth(t *testing.T) {
 	c := NewNoAuthTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.AuthenticationFailed, context.Error.Code)
@@ -164,7 +164,7 @@ func TestCreateContextBadParameters(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.MalformedURL, context.Error.Code)
@@ -182,7 +182,7 @@ func TestCreateContextBadRoute(t *testing.T) {
 	}
 	c := NewTestController("HTTP Test")
 	router := CreateRouter(&c)
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.InvalidRoute, context.Error.Code)
@@ -203,7 +203,7 @@ func TestCreateContextBadTemplate(t *testing.T) {
 	c.Routes = append(c.Routes, "foo/{{id}}{{id2}}")
 	router := CreateRouter(&c)
 	assert.NoError(router.AddController(&c))
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.InvalidRoute, context.Error.Code)
@@ -225,7 +225,7 @@ func TestCreateContextQueryStringNotInParameters(t *testing.T) {
 	router := CreateRouter(&c)
 	assert.NoError(router.AddController(&c))
 
-	context := CreateContext(w, &r, router)
+	context := CreateContext(w, &r, router, nil)
 	assert.False(context.HasError())
 
 	actual, ok := context.URIParameters["id"]

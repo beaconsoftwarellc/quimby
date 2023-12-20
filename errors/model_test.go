@@ -1,4 +1,4 @@
-package error
+package errors
 
 import (
 	"errors"
@@ -30,6 +30,7 @@ type MockRestErrorContainer struct {
 func (mock *MockRestErrorContainer) SetError(e *RestError, s int) {
 	mock.SetErrorRestError = e
 	mock.SetErrorStatus = s
+
 }
 
 func TestTranslateError(t *testing.T) {
@@ -82,12 +83,6 @@ func TestTranslateError(t *testing.T) {
 			expectedStatus:   http.StatusBadRequest,
 		},
 		{
-			name:             "codes.Canceled",
-			err:              status.Error(codes.Canceled, ""),
-			expectedRestCode: SystemError,
-			expectedStatus:   http.StatusInternalServerError,
-		},
-		{
 			name:             "codes.OutOfRange",
 			err:              status.Error(codes.OutOfRange, ""),
 			expectedRestCode: ValidationError,
@@ -114,6 +109,18 @@ func TestTranslateError(t *testing.T) {
 		{
 			name:             "any",
 			err:              errors.New(generator.String(20)),
+			expectedRestCode: SystemError,
+			expectedStatus:   http.StatusInternalServerError,
+		},
+		{
+			name:             "Canceled",
+			err:              status.Error(codes.Canceled, ""),
+			expectedRestCode: Canceled,
+			expectedStatus:   http.StatusInternalServerError,
+		},
+		{
+			name:             "DeadlineExceeded",
+			err:              status.Error(codes.DeadlineExceeded, ""),
 			expectedRestCode: SystemError,
 			expectedStatus:   http.StatusInternalServerError,
 		},
