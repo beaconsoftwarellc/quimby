@@ -1,11 +1,11 @@
 module github.com/beaconsoftwarellc/quimby/v2
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/beaconsoftwarellc/gadget/v2 v2.13.0
 	github.com/spf13/cast v1.5.1
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.56.3
 )
 
