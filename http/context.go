@@ -1,7 +1,7 @@
 package http
 
 import (
-	"context"
+	goctx "context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,7 +49,7 @@ func (err *NoContentError) Trace() []string {
 // Context serves as a structure that tracks the state of a given http Request
 // Response chain.
 type Context struct {
-	context.Context
+	goctx.Context
 	URIParameters map[string]string
 	URLParameters url.Values
 	URI           string
@@ -84,6 +84,9 @@ func (context *Context) GetUrl() *url.URL {
 
 // GetLog associated with this context
 func (context *Context) GetLog() log.Logger {
+	if context.Log == nil {
+		context.Log = log.Global()
+	}
 	return context.Log
 }
 
@@ -96,8 +99,8 @@ func (context *Context) Status() int {
 func (context *Context) SetError(err *qerror.RestError, status int) {
 	context.responseStatus = status
 	context.Error = err
-	if http.StatusInternalServerError == status {
-		context.Log.Errorf("[HTTP.CTX.100] InternalServerError encountered "+
+	if http.StatusInternalServerError == status && err.Code != qerror.Canceled {
+		context.GetLog().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
 			"servicing request %s %s: %s", context.Method, context.URL, err)
 	}
 }
@@ -141,7 +144,7 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 	qctx.Method = request.Method
 	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
 	if nil == logger {
-		logger = log.Global()
+		logger = qctx.GetLog()
 	}
 	// pull off a new logger and set the session so we can trace
 	// any log messages off this context
@@ -151,7 +154,7 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 	if ctx := request.Context(); ctx != nil {
 		qctx.Context = ctx
 	} else {
-		qctx.Context = context.Background()
+		qctx.Context = goctx.Background()
 	}
 
 	if err != nil {
@@ -206,7 +209,8 @@ func (context *Context) Read() ([]byte, error) {
 	n, err := io.ReadFull(context.Request.Body, body)
 
 	if err == io.ErrUnexpectedEOF {
-		log.Errorf("warning:%s:%s: Request.ContentLength (%d) mismatch with actual body length (%d)", context.URI,
+		context.GetLog().Errorf("warning:%s:%s: Request.ContentLength (%d) "+
+			"mismatch with actual body length (%d)", context.URI,
 			context.Request.RemoteAddr, n, context.Request.ContentLength)
 	}
 	// Ignore EOF error

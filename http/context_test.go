@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
+	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/errors"
 	"github.com/beaconsoftwarellc/quimby/v2/http/multipartform/testdata"
@@ -78,6 +81,38 @@ func TestSetError(t *testing.T) {
 	assert.False(context.SetResponse("model", http.StatusOK))
 	assert.Equal(nil, context.Model)
 	assert.Equal(http.StatusMethodNotAllowed, context.Status())
+	assert.True(context.HasError())
+}
+
+func TestSetError_Logging(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	mockLogger := log.NewMockLogger(ctrl)
+	context := Context{
+		Error:  nil,
+		Log:    mockLogger,
+		Method: http.MethodGet,
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   "localhost",
+		},
+	}
+
+	// StatusInternalServerError logged
+	expectedError := qerror.NewRestError(qerror.MethodNotAllowed, "", nil)
+	mockLogger.EXPECT().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
+		"servicing request %s %s: %s", context.Method, context.URL, expectedError)
+	context.SetError(expectedError, http.StatusInternalServerError)
+	assert.Equal(expectedError, context.Error)
+	assert.Equal(http.StatusInternalServerError, context.Status())
+	assert.True(context.HasError())
+
+	// StatusInternalServerError for canceled context not logged
+	expectedError = qerror.NewRestError(qerror.Canceled, "", nil)
+	fmt.Println(expectedError.Error())
+	context.SetError(expectedError, http.StatusInternalServerError)
+	assert.Equal(expectedError, context.Error)
+	assert.Equal(http.StatusInternalServerError, context.Status())
 	assert.True(context.HasError())
 }
 
