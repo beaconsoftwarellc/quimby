@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -48,7 +49,8 @@ func (server *RESTServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case http.MethodOptions:
 			context.Route.Controller.Options(context)
 		default:
-			context.SetError(qerror.NewRestError(qerror.MethodNotAllowed, "", nil), http.StatusMethodNotAllowed)
+			context.SetError(qerror.NewRestError(qerror.MethodNotAllowed, "", nil),
+				http.StatusMethodNotAllowed)
 		}
 	}
 	server.CompleteRequest(start, context)
@@ -80,10 +82,11 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 		}(start)
 	}
 	contentType := context.Response.Header().Get(contentTypeHeader)
-	if stringutil.IsWhiteSpace(context.Response.Header().Get(contentTypeHeader)) {
+	if stringutil.IsWhiteSpace(contentType) {
 		contentType = contentTypeJSON
 		context.Response.Header().Set(contentTypeHeader, contentType)
 	}
+
 	if contentTypeJSON == contentType {
 		server.completeRequestJSON(context)
 		return
@@ -93,7 +96,7 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 	if context.HasError() {
 		b = []byte(context.Error.Message)
 	} else if nil != context.Model {
-		b = []byte(context.Model.(string))
+		b = []byte(fmt.Sprintf("%v", context.Model))
 	}
 
 	context.Response.WriteHeader(context.responseStatus)
@@ -101,25 +104,23 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 }
 
 func (server *RESTServer) completeRequestJSON(context *Context) {
-	context.Response.Header().Add(contentTypeHeader, contentTypeJSON)
-	var b []byte
-	var e error
+	var (
+		b []byte
+		e error
+	)
 	if context.HasError() {
 		b, e = json.Marshal(context.Error)
-		if e != nil {
-			context.SetError(qerror.NewRestError("system-error", "", nil), http.StatusInternalServerError)
-			b, _ = json.Marshal(context.Error)
-		}
+	} else if _, ok := context.Model.(string); ok {
+		b = []byte(context.Model.(string))
 	} else {
 		b, e = json.Marshal(context.Model)
-		if e != nil {
-			context.SetError(qerror.NewRestError("system-error", "", nil), http.StatusInternalServerError)
-			b, _ = json.Marshal(context.Error)
-		}
+	}
+	if e != nil {
+		context.SetError(qerror.NewRestError("system-error", "", nil), http.StatusInternalServerError)
+		b, _ = json.Marshal(context.Error)
 	}
 	context.Response.WriteHeader(context.responseStatus)
-	err := context.Write(b)
-	_ = log.Warn(err)
+	_ = log.Warn(context.Write(b))
 }
 
 // ListenAndServe starts a http server listening on the address specified
