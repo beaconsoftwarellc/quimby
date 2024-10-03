@@ -82,7 +82,7 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 		}(start)
 	}
 	contentType := context.Response.Header().Get(contentTypeHeader)
-	if stringutil.IsEmpty(contentType) {
+	if stringutil.IsWhiteSpace(contentType) {
 		contentType = contentTypeJSON
 		context.Response.Header().Set(contentTypeHeader, contentType)
 	}
