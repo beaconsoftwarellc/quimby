@@ -106,12 +106,13 @@ func setField(
 
 func getCastForType(reflectType reflect.Type) (castE, error) {
 	var (
-		f   castE
-		err error
+		f         castE
+		err       error
+		errFormat = "reflect.Type='%s' is unhandled"
 	)
 	switch reflectType.Kind() {
 	case reflect.Invalid:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	case reflect.Bool:
 		f = func(v []string) (any, error) {
 			var r any
@@ -212,7 +213,7 @@ func getCastForType(reflectType reflect.Type) (castE, error) {
 			return r, err
 		}
 	case reflect.Uintptr:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	case reflect.Float32:
 		f = func(v []string) (any, error) {
 			var r any
@@ -232,15 +233,15 @@ func getCastForType(reflectType reflect.Type) (castE, error) {
 			return r, err
 		}
 	case reflect.Complex64:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	case reflect.Complex128:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	case reflect.Array, reflect.Slice:
 		f, err = getCastToSlice(reflectType)
 	case reflect.Chan:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	case reflect.Func:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	case reflect.Pointer:
 		f = getCastToPtr(reflectType)
 	case reflect.String:
@@ -257,9 +258,9 @@ func getCastForType(reflectType reflect.Type) (castE, error) {
 	case reflect.Map:
 		f = getCastToMap(reflectType)
 	case reflect.UnsafePointer:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	default:
-		err = errors.New("reflect.Type='%s' is unhandled", reflectType)
+		err = errors.Newf(errFormat, reflectType)
 	}
 	return f, err
 }
