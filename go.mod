@@ -1,9 +1,11 @@
 module github.com/beaconsoftwarellc/quimby/v2
 
-go 1.22.4
+go 1.23.1
+
+toolchain go1.23.2
 
 require (
-	github.com/beaconsoftwarellc/gadget/v2 v2.22.2
+	github.com/beaconsoftwarellc/gadget/v2 v2.24.0
 	github.com/spf13/cast v1.5.1
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/mock v0.3.0

@@ -266,7 +266,7 @@ func (context *Context) ReadObject(target interface{}) error {
 			err = context.readJSON(body, target)
 		}
 	default:
-		err = errors.New("Unsupported contentType (%s) provided", contentType)
+		err = errors.Newf("Unsupported contentType (%s) provided", contentType)
 	}
 	if nil != err {
 		context.SetError(qerror.NewRestError(qerror.ValidationError,
