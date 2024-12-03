@@ -134,16 +134,16 @@ func (context *Context) SetResponse(model interface{}, status int) bool {
 	return true
 }
 
-func (context *Context) SetRedirect(model interface{}, status int, location string) bool {
+func (context *Context) SetRedirect(model interface{}, location string) bool {
 	if context.HasError() {
 		return false
 	}
 	if context.responseStatus != 0 {
 		return false
 	}
-	context.responseStatus = status
-	context.Model = model
+	context.responseStatus = http.StatusFound
 	context.Response.Header().Set(locationHeader, location)
+	context.Model = model
 	return true
 }
 
