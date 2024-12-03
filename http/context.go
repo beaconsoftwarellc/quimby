@@ -126,8 +126,24 @@ func (context *Context) SetResponse(model interface{}, status int) bool {
 	if context.HasError() {
 		return false
 	}
+	if context.responseStatus != 0 {
+		return false
+	}
 	context.responseStatus = status
 	context.Model = model
+	return true
+}
+
+func (context *Context) SetRedirect(model interface{}, status int, location string) bool {
+	if context.HasError() {
+		return false
+	}
+	if context.responseStatus != 0 {
+		return false
+	}
+	context.responseStatus = status
+	context.Model = model
+	context.Response.Header().Set(locationHeader, location)
 	return true
 }
 
