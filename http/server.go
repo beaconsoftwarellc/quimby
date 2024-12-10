@@ -62,6 +62,7 @@ const (
 	contentTypeForm               = "application/x-www-form-urlencoded"
 	contentTypeMultiPartFormData  = "multipart/form-data"
 	contentTypeMultiPartFormData1 = "multipart/mixed"
+	locationHeader                = "Location"
 )
 
 // CompleteRequest generates output and completes the Request
@@ -81,6 +82,7 @@ func (server *RESTServer) CompleteRequest(start time.Time, context *Context) {
 			)
 		}(start)
 	}
+
 	contentType := context.Response.Header().Get(contentTypeHeader)
 	if stringutil.IsWhiteSpace(contentType) {
 		contentType = contentTypeJSON

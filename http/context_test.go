@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/beaconsoftwarellc/gadget/v2/generator"
 	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 	qerror "github.com/beaconsoftwarellc/quimby/v2/errors"
@@ -756,4 +758,49 @@ func Test_context_GetObject_MultipartForm(t *testing.T) {
 	assert.Equal("quux", target.TestStruct.Foo)
 	assert.Equal(2, target.TestStruct.Bar)
 	assert.Equal([]string{"1mle", "2mle"}, target.TestStruct.Baz)
+}
+
+func Test_context_SetLocation(t *testing.T) {
+	assert := assert.New(t)
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	response := httptest.NewRecorder()
+	location := "http://example.com"
+	context := &Context{Request: request, Response: response}
+	content := generator.ID("content")
+	assert.True(context.SetRedirect(content, location))
+	assert.Equal(http.StatusFound, context.responseStatus)
+	assert.Equal(location, response.Header().Get(locationHeader))
+	assert.Equal(content, context.Model)
+
+	// setting a different status should fail
+	assert.False(context.SetResponse("bar", http.StatusBadRequest))
+	assert.Equal(http.StatusFound, context.responseStatus)
+	assert.Equal(location, response.Header().Get("Location"))
+	assert.Equal(content, context.Model)
+
+	assert.False(context.SetRedirect("bar", generator.String(10)))
+	assert.Equal(http.StatusFound, context.responseStatus)
+	assert.Equal(location, response.Header().Get("Location"))
+	assert.Equal(content, context.Model)
+}
+
+func Test_context_SetResponse(t *testing.T) {
+	assert := assert.New(t)
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	response := httptest.NewRecorder()
+	context := &Context{Request: request, Response: response}
+	content := generator.ID("content")
+	status := http.StatusTeapot
+	assert.True(context.SetResponse(content, status))
+	assert.Equal(status, context.responseStatus)
+	assert.Equal(content, context.Model)
+
+	// setting a different status should fail
+	assert.False(context.SetResponse("bar", http.StatusBadRequest))
+	assert.Equal(status, context.responseStatus)
+	assert.Equal(content, context.Model)
+
+	assert.False(context.SetRedirect("bar", generator.String(10)))
+	assert.Equal(status, context.responseStatus)
+	assert.Equal(content, context.Model)
 }
