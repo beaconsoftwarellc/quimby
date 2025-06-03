@@ -117,7 +117,7 @@ func TestCompleteRequestResponse(t *testing.T) {
 	context := Context{Request: r, Response: w}
 	context.SetResponse("OK", http.StatusOK)
 	server.CompleteRequest(time.Now(), &context)
-	assert.Equal("\"OK\"", stringutil.NullTerminatedString(writerBody))
+	assert.Equal("OK", stringutil.NullTerminatedString(writerBody))
 	assert.Equal(http.StatusOK, writerStatus)
 }
 
