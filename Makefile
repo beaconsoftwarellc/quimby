@@ -2,7 +2,7 @@
 
 SRC_FILES := $(shell find . -iname "*.go" )
 
-all: unit
+all: unit _setup
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -18,3 +18,7 @@ unit:
 
 fmt:
 	goimports -local github.com/beaconsoftwarellc/ -w .
+
+.PHONY: _setup
+_setup:
+	@node .github/setup.js
