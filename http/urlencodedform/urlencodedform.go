@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
@@ -82,7 +83,16 @@ func URLValuesToObject(values url.Values, target interface{}) error {
 			continue
 		}
 		switch fieldType.Kind() {
-		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Struct, reflect.UnsafePointer:
+		case reflect.Struct:
+			if fieldType.Name() == reflect.TypeOf(time.Time{}).Name() {
+				valueMap[fieldName], err = time.Parse(time.RFC3339, queryValues[0])
+				if nil != err {
+					log.Warnf("error parsing time for field name '%s' and value '%s'",
+						fieldName, queryValues[0])
+				}
+			}
+			continue
+		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.UnsafePointer:
 			continue
 		case reflect.Slice, reflect.Array:
 			if len(queryValues) == 0 {
