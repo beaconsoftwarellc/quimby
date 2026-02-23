@@ -84,7 +84,7 @@ func URLValuesToObject(values url.Values, target interface{}) error {
 		}
 		switch fieldType.Kind() {
 		case reflect.Struct:
-			if fieldType.Name() == reflect.TypeOf(time.Time{}).Name() {
+			if fieldType == reflect.TypeOf(time.Time{}) {
 				valueMap[fieldName], err = time.Parse(time.RFC3339, queryValues[0])
 				if nil != err {
 					log.Warnf("error parsing time for field name '%s' and value '%s'",
