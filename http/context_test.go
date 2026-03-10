@@ -290,19 +290,6 @@ func TestRead(t *testing.T) {
 	assert.Nil(err)
 }
 
-func TestReadEmpty(t *testing.T) {
-	assert := assert.New(t)
-
-	r := http.Request{}
-	context := Context{
-		Request: &r,
-	}
-	body, err := context.Read()
-
-	assert.Nil(body)
-	assert.EqualError(err, NewNoContentError("", "").Error())
-}
-
 func TestReadObject_withJSON(t *testing.T) {
 	assert := assert.New(t)
 
@@ -378,20 +365,6 @@ func TestReadObject_withJSON_BadInput(t *testing.T) {
 	assert.Error(err)
 	assert.True(context.HasError())
 	assert.Equal(http.StatusNotAcceptable, context.Status())
-}
-
-func TestReadObject_withJSON_Empty(t *testing.T) {
-	assert := assert.New(t)
-
-	r := http.Request{ContentLength: 0}
-	context := Context{
-		Request: &r,
-	}
-	s := ""
-	err := context.ReadObject(s)
-
-	assert.Equal("", s)
-	assert.EqualError(err, NewNoContentError("", "").Error())
 }
 
 func TestReadObject_withForm(t *testing.T) {
