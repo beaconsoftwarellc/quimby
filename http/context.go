@@ -19,33 +19,6 @@ import (
 	"github.com/beaconsoftwarellc/quimby/v2/http/urlencodedform"
 )
 
-// NoContentError is returned when Read is called and the Request has a 0
-// content length.
-type NoContentError struct {
-	RequestPath   string
-	RequestMethod string
-	trace         []string
-}
-
-// NewNoContentError instantiates a NoContentError with a stack trace
-func NewNoContentError(path, method string) errors.TracerError {
-	return &NoContentError{
-		RequestPath:   path,
-		RequestMethod: method,
-		trace:         errors.GetStackTrace(),
-	}
-}
-
-func (err *NoContentError) Error() string {
-	return fmt.Sprintf("Request (%s %s) cannot be 'Read' as it has no content.",
-		err.RequestMethod, err.RequestPath)
-}
-
-// Trace returns the stack trace for the error
-func (err *NoContentError) Trace() []string {
-	return err.trace
-}
-
 // Context serves as a structure that tracks the state of a given http Request
 // Response chain.
 type Context struct {
@@ -218,9 +191,6 @@ func (context *Context) Read() ([]byte, error) {
 	if context.bodyRead {
 		return []byte(context.Body), nil
 	}
-	if context.Request.ContentLength <= 0 {
-		return nil, NewNoContentError("", "")
-	}
 	body := make([]byte, context.Request.ContentLength)
 	n, err := io.ReadFull(context.Request.Body, body)
 
@@ -252,9 +222,6 @@ func (context *Context) ReadObject(target interface{}) error {
 		err         error
 		contentType string
 	)
-	if context.Request.ContentLength <= 0 {
-		return NewNoContentError("", "")
-	}
 	contentType, _, err = mime.
 		ParseMediaType(context.Request.Header.Get(contentTypeHeader))
 	if nil != err {

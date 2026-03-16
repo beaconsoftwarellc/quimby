@@ -299,8 +299,8 @@ func TestReadEmpty(t *testing.T) {
 	}
 	body, err := context.Read()
 
-	assert.Nil(body)
-	assert.EqualError(err, NewNoContentError("", "").Error())
+	assert.Empty(body)
+	assert.NoError(err)
 }
 
 func TestReadObject_withJSON(t *testing.T) {
@@ -391,7 +391,7 @@ func TestReadObject_withJSON_Empty(t *testing.T) {
 	err := context.ReadObject(s)
 
 	assert.Equal("", s)
-	assert.EqualError(err, NewNoContentError("", "").Error())
+	assert.Error(err)
 }
 
 func TestReadObject_withForm(t *testing.T) {
