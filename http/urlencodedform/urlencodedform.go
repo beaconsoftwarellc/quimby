@@ -66,6 +66,20 @@ func inspectModel(target interface{}) map[string]reflect.Type {
 	return fieldMap
 }
 
+func timeParse(unparsedTime string) (time.Time, error) {
+	var (
+		parsedTime time.Time
+		err        error
+	)
+	for _, format := range []string{time.RFC3339, time.DateOnly} {
+		parsedTime, err = time.Parse(format, unparsedTime)
+		if err == nil {
+			return parsedTime, nil
+		}
+	}
+	return parsedTime, err
+}
+
 // URLValuesToObject parses the url values and stores the result
 // in the value pointed to by v. If v is nil or not a pointer,
 // URLValuesToObject returns an InvalidUnmarshalError.
@@ -85,7 +99,7 @@ func URLValuesToObject(values url.Values, target interface{}) error {
 		switch fieldType.Kind() {
 		case reflect.Struct:
 			if fieldType == reflect.TypeOf(time.Time{}) {
-				valueMap[fieldName], err = time.Parse(time.RFC3339, queryValues[0])
+				valueMap[fieldName], err = timeParse(queryValues[0])
 				if nil != err {
 					log.Warnf("error parsing time for field name '%s' and value '%s'",
 						fieldName, queryValues[0])
