@@ -194,10 +194,15 @@ func (context *Context) Read() ([]byte, error) {
 	body := make([]byte, context.Request.ContentLength)
 	n, err := io.ReadFull(context.Request.Body, body)
 
-	if err == io.ErrUnexpectedEOF || err == io.EOF {
+	if err == io.ErrUnexpectedEOF && context.Err() != nil {
+		err = context.Err()
+	}
+	if err == io.ErrUnexpectedEOF {
 		context.GetLog().Warnf("%s:%s: Request.ContentLength (%d) "+
 			"mismatch with actual body length (%d)", context.URI,
 			context.Request.RemoteAddr, n, context.Request.ContentLength)
+	}
+	if err == io.EOF {
 		err = nil
 	}
 
