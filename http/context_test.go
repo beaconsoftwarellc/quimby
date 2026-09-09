@@ -290,6 +290,32 @@ func TestRead(t *testing.T) {
 	assert.Nil(err)
 }
 
+func TestRead_ContextErrorCase(t *testing.T) {
+	assert := assert.New(t)
+
+	// cancel request
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	b := FakeBody{
+		Content: "foo",
+		Error:   io.ErrUnexpectedEOF,
+	}
+
+	// mismatch lengths
+	r := http.Request{
+		ContentLength: int64(len(b.Content) + 1),
+		Body:          b,
+	}
+	testContext := Context{
+		Context: ctx,
+		Request: &r,
+	}
+
+	_, err := testContext.Read()
+	assert.ErrorIs(err, context.Canceled)
+}
+
 func TestReadEmpty(t *testing.T) {
 	assert := assert.New(t)
 
