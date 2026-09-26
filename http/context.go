@@ -19,10 +19,45 @@ import (
 	"github.com/beaconsoftwarellc/quimby/v2/http/urlencodedform"
 )
 
+// ContextBase is an interface for base functionality that is common to all contexts
+type ContextBase interface {
+	// GetLogger for this context as a sub-logger from the passed instance. Use log.Global()
+	// if no local custom instance is desired.
+	GetLogger(logger log.Logger) log.Logger
+	// GetSession for this context identified in log messages
+	GetSession() string
+	// SetSession for this context's log messages
+	SetSession(prefix generator.IDPrefix)
+}
+
+// NewDefaultBase returns a default implementation of ContextBase
+func NewDefaultBase() ContextBase {
+	return &DefaultBase{}
+}
+
+type DefaultBase struct {
+	Session string
+}
+
+func (c *DefaultBase) GetLogger(logger log.Logger) log.Logger {
+	return logger.New(c.Session)
+}
+
+func (c *DefaultBase) GetSession() string {
+	return c.Session
+}
+
+func (c *DefaultBase) SetSession(prefix generator.IDPrefix) {
+	if stringutil.IsWhiteSpace(c.GetSession()) {
+		c.Session = generator.ID(prefix)
+	}
+}
+
 // Context serves as a structure that tracks the state of a given http Request
 // Response chain.
 type Context struct {
 	goctx.Context
+	ContextBase
 	URIParameters map[string]string
 	URLParameters url.Values
 	URI           string
@@ -58,7 +93,7 @@ func (context *Context) GetUrl() *url.URL {
 // GetLog associated with this context
 func (context *Context) GetLog() log.Logger {
 	if context.Log == nil {
-		context.Log = log.Global()
+		context.Log = context.ContextBase.GetLogger(log.Global())
 	}
 	return context.Log
 }
@@ -123,10 +158,13 @@ func (context *Context) SetRedirect(model interface{}, location string) bool {
 // CreateContext initializes a Context from the passed Response and Request
 // pair, and router. The router is used for detemplating and populating the
 // URIParameters
-func CreateContext(writer http.ResponseWriter, request *http.Request,
+func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.Request,
 	router Router, logger log.Logger) *Context {
 	var err error
-	qctx := &Context{Request: request, Extended: make(map[string]interface{})}
+	qctx := &Context{
+		ContextBase: base,
+		Request:     request, Extended: make(map[string]interface{}),
+	}
 	qctx.Response = writer
 	qctx.URL = request.URL
 	qctx.URI = request.RequestURI
@@ -137,8 +175,7 @@ func CreateContext(writer http.ResponseWriter, request *http.Request,
 	}
 	// pull off a new logger and set the session so we can trace
 	// any log messages off this context
-	qctx.Log = logger.New("http")
-	qctx.Log.SetSessionID(generator.String(10))
+	qctx.SetSession("http")
 
 	if ctx := request.Context(); ctx != nil {
 		qctx.Context = ctx

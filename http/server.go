@@ -18,22 +18,27 @@ const healthCheckURI = "/" + HealthCheckRoute
 // RESTServer is a struct for managing the configuration and start up of a
 // http/s server using the routing and controller logic in this package.
 type RESTServer struct {
-	Address string
-	Port    int
-	Router  Router
+	Address    string
+	Port       int
+	Router     Router
+	newContext NewContextBase
 }
 
+// NewContextBase for an incoming request
+type NewContextBase func() ContextBase
+
 // CreateRESTServer initializes a RESTServer struct and returns it.
-func CreateRESTServer(address string, rootController Controller) RESTServer {
+func CreateRESTServer(address string, rootController Controller, newContext NewContextBase) RESTServer {
 	server := RESTServer{Address: address}
 	server.Router = CreateRouter(rootController)
+	server.newContext = newContext
 	return server
 }
 
 // ServeHTTP processes the HTTP Request
 func (server *RESTServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	context := CreateContext(w, r, server.Router, nil)
+	context := CreateContext(server.newContext(), w, r, server.Router, nil)
 	if !context.HasError() {
 		switch context.Request.Method {
 		case http.MethodGet:
