@@ -118,8 +118,8 @@ func (context *Context) HasError() bool {
 	return nil != context.Error
 }
 
-// AddError adds an error detail to the context
-// Primary use case is to add a series of validation type errors
+// AddError adds an error detail to the context.
+// Note: The primary use case is to add a series of validation type errors
 func (context *Context) AddError(err qerror.FieldError) {
 	if !context.HasError() {
 		context.SetError(qerror.NewRestError(qerror.ValidationError, "", nil),
@@ -173,8 +173,7 @@ func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.R
 	if nil == logger {
 		logger = qctx.GetLog()
 	}
-	// pull off a new logger and set the session so we can trace
-	// any log messages off this context
+	// set the session on the base in case it has not been set yet.
 	qctx.SetSession("http")
 
 	if ctx := request.Context(); ctx != nil {
@@ -232,12 +231,10 @@ func (context *Context) Read() ([]byte, error) {
 	n, err := io.ReadFull(context.Request.Body, body)
 
 	if err == io.ErrUnexpectedEOF && context.Err() != nil {
-		err = context.Err()
-	}
-	if err == io.ErrUnexpectedEOF {
 		context.GetLog().Warnf("%s:%s: Request.ContentLength (%d) "+
 			"mismatch with actual body length (%d)", context.URI,
 			context.Request.RemoteAddr, n, context.Request.ContentLength)
+		err = context.Err()
 	}
 	if err == io.EOF {
 		err = nil
