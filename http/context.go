@@ -21,9 +21,11 @@ import (
 
 // ContextBase is an interface for base functionality that is common to all contexts
 type ContextBase interface {
-	// GetLogger for this context as a sub-logger from the passed instance. Use log.Global()
-	// if no local custom instance is desired.
-	GetLogger(logger log.Logger) log.Logger
+	// GetLogger for this context.
+	GetLogger() log.Logger
+	// SetLogger for this context as a sub-logger of the passed logger with the
+	// session off this context.
+	SetLogger(logger log.Logger) log.Logger
 	// GetSession for this context identified in log messages
 	GetSession() string
 	// SetSession for this context's log messages
@@ -37,10 +39,22 @@ func NewDefaultBase() ContextBase {
 
 type DefaultBase struct {
 	Session string
+	logger  log.Logger
 }
 
-func (c *DefaultBase) GetLogger(logger log.Logger) log.Logger {
-	return logger.New(c.Session)
+func (c *DefaultBase) GetLogger() log.Logger {
+	if c.logger == nil {
+		c.logger = log.Global().New(c.Session)
+	}
+	return c.logger
+}
+
+func (c *DefaultBase) SetLogger(logger log.Logger) log.Logger {
+	if logger == nil {
+		logger = log.Global()
+	}
+	c.logger = logger.New(c.Session)
+	return c.logger
 }
 
 func (c *DefaultBase) GetSession() string {
@@ -90,14 +104,6 @@ func (context *Context) GetUrl() *url.URL {
 	return context.URL
 }
 
-// GetLog associated with this context
-func (context *Context) GetLog() log.Logger {
-	if context.Log == nil {
-		context.Log = context.ContextBase.GetLogger(log.Global())
-	}
-	return context.Log
-}
-
 // Status returns the HTTP status of the response
 func (context *Context) Status() int {
 	return context.responseStatus
@@ -108,7 +114,7 @@ func (context *Context) SetError(err *qerror.RestError, status int) {
 	context.responseStatus = status
 	context.Error = err
 	if http.StatusInternalServerError == status && err.Code != qerror.Canceled {
-		context.GetLog().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
+		context.GetLogger().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
 			"servicing request %s %s: %s", context.Method, context.URL, err)
 	}
 }
@@ -170,9 +176,8 @@ func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.R
 	qctx.URI = request.RequestURI
 	qctx.Method = request.Method
 	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
-	if nil == logger {
-		logger = qctx.GetLog()
-	}
+
+	logger = qctx.SetLogger(logger)
 	// set the session on the base in case it has not been set yet.
 	qctx.SetSession("http")
 
@@ -231,7 +236,7 @@ func (context *Context) Read() ([]byte, error) {
 	n, err := io.ReadFull(context.Request.Body, body)
 
 	if err == io.ErrUnexpectedEOF && context.Err() != nil {
-		context.GetLog().Warnf("%s:%s: Request.ContentLength (%d) "+
+		context.GetLogger().Warnf("%s:%s: Request.ContentLength (%d) "+
 			"mismatch with actual body length (%d)", context.URI,
 			context.Request.RemoteAddr, n, context.Request.ContentLength)
 		err = context.Err()
