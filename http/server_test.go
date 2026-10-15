@@ -82,7 +82,7 @@ func TestServeHTTP(t *testing.T) {
 
 	controller := NewTestController("HTTP Test")
 	controller.Routes = append(controller.Routes, "route")
-	server := CreateRESTServer(":8080", &controller)
+	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
 	assert.NoError(server.Router.AddController(&controller))
 
 	methods := []string{
@@ -112,7 +112,7 @@ func TestCompleteRequestResponse(t *testing.T) {
 	assert.NoError(err)
 
 	controller := NewTestController("HTTP Test")
-	server := CreateRESTServer(":8080", &controller)
+	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
 
 	context := Context{Request: r, Response: w}
 	context.SetResponse("OK", http.StatusOK)
@@ -132,7 +132,7 @@ func TestCompleteRequestError(t *testing.T) {
 	assert.NoError(e)
 
 	controller := NewTestController("HTTP Test")
-	server := CreateRESTServer(":8080", &controller)
+	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
 	context := Context{Request: r, Response: w}
 	err := qerror.NewRestError("testing", "", nil)
 	context.SetError(err, http.StatusTeapot)
@@ -153,8 +153,8 @@ func TestCompleteRequestErrorCannotMarshall(t *testing.T) {
 	assert.NoError(e)
 
 	controller := NewTestController("HTTP Test")
-	server := CreateRESTServer(":8080", &controller)
-	context := Context{Request: r, Response: w}
+	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
+	context := Context{Request: r, Response: w, ContextBase: NewDefaultBase()}
 	exp, _ := json.Marshal(qerror.NewRestError("system-error", "", nil))
 
 	err := qerror.NewRestError("testing", "", nil)
@@ -176,8 +176,8 @@ func TestCompleteRequestResponseCannotMarshal(t *testing.T) {
 	assert.NoError(e)
 
 	controller := NewTestController("HTTP Test")
-	server := CreateRESTServer(":8080", &controller)
-	context := Context{Request: r, Response: w}
+	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
+	context := Context{Request: r, Response: w, ContextBase: NewDefaultBase()}
 	exp, _ := json.Marshal(qerror.NewRestError("system-error", "", nil))
 	context.SetResponse(math.Inf(1), http.StatusAlreadyReported)
 	server.CompleteRequest(time.Now(), &context)
