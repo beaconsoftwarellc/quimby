@@ -169,7 +169,8 @@ func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.R
 	var err error
 	qctx := &Context{
 		ContextBase: base,
-		Request:     request, Extended: make(map[string]interface{}),
+		Request:     request,
+		Extended:    make(map[string]interface{}),
 	}
 	qctx.Response = writer
 	qctx.URL = request.URL
