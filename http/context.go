@@ -19,10 +19,59 @@ import (
 	"github.com/beaconsoftwarellc/quimby/v2/http/urlencodedform"
 )
 
+// ContextBase is an interface for base functionality that is common to all contexts
+type ContextBase interface {
+	// GetLogger for this context.
+	GetLogger() log.Logger
+	// SetLogger for this context as a sub-logger of the passed logger with the
+	// session off this context.
+	SetLogger(logger log.Logger) log.Logger
+	// GetSession for this context identified in log messages
+	GetSession() string
+	// SetSession for this context's log messages
+	SetSession(prefix generator.IDPrefix)
+}
+
+// NewDefaultBase returns a default implementation of ContextBase
+func NewDefaultBase() ContextBase {
+	return &DefaultBase{}
+}
+
+type DefaultBase struct {
+	Session string
+	logger  log.Logger
+}
+
+func (c *DefaultBase) GetLogger() log.Logger {
+	if c.logger == nil {
+		c.logger = log.Global().New(c.Session)
+	}
+	return c.logger
+}
+
+func (c *DefaultBase) SetLogger(logger log.Logger) log.Logger {
+	if logger == nil {
+		logger = log.Global()
+	}
+	c.logger = logger.New(c.Session)
+	return c.logger
+}
+
+func (c *DefaultBase) GetSession() string {
+	return c.Session
+}
+
+func (c *DefaultBase) SetSession(prefix generator.IDPrefix) {
+	if stringutil.IsWhiteSpace(c.GetSession()) {
+		c.Session = generator.ID(prefix)
+	}
+}
+
 // Context serves as a structure that tracks the state of a given http Request
 // Response chain.
 type Context struct {
 	goctx.Context
+	ContextBase
 	URIParameters map[string]string
 	URLParameters url.Values
 	URI           string
@@ -55,14 +104,6 @@ func (context *Context) GetUrl() *url.URL {
 	return context.URL
 }
 
-// GetLog associated with this context
-func (context *Context) GetLog() log.Logger {
-	if context.Log == nil {
-		context.Log = log.Global()
-	}
-	return context.Log
-}
-
 // Status returns the HTTP status of the response
 func (context *Context) Status() int {
 	return context.responseStatus
@@ -73,7 +114,7 @@ func (context *Context) SetError(err *qerror.RestError, status int) {
 	context.responseStatus = status
 	context.Error = err
 	if http.StatusInternalServerError == status && err.Code != qerror.Canceled {
-		context.GetLog().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
+		context.GetLogger().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
 			"servicing request %s %s: %s", context.Method, context.URL, err)
 	}
 }
@@ -83,8 +124,8 @@ func (context *Context) HasError() bool {
 	return nil != context.Error
 }
 
-// AddError adds an error detail to the context
-// Primary use case is to add a series of validation type errors
+// AddError adds an error detail to the context.
+// Note: The primary use case is to add a series of validation type errors
 func (context *Context) AddError(err qerror.FieldError) {
 	if !context.HasError() {
 		context.SetError(qerror.NewRestError(qerror.ValidationError, "", nil),
@@ -123,22 +164,23 @@ func (context *Context) SetRedirect(model interface{}, location string) bool {
 // CreateContext initializes a Context from the passed Response and Request
 // pair, and router. The router is used for detemplating and populating the
 // URIParameters
-func CreateContext(writer http.ResponseWriter, request *http.Request,
+func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.Request,
 	router Router, logger log.Logger) *Context {
 	var err error
-	qctx := &Context{Request: request, Extended: make(map[string]interface{})}
+	qctx := &Context{
+		ContextBase: base,
+		Request:     request,
+		Extended:    make(map[string]interface{}),
+	}
 	qctx.Response = writer
 	qctx.URL = request.URL
 	qctx.URI = request.RequestURI
 	qctx.Method = request.Method
 	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
-	if nil == logger {
-		logger = qctx.GetLog()
-	}
-	// pull off a new logger and set the session so we can trace
-	// any log messages off this context
-	qctx.Log = logger.New("http")
-	qctx.Log.SetSessionID(generator.String(10))
+
+	logger = qctx.SetLogger(logger)
+	// set the session on the base in case it has not been set yet.
+	qctx.SetSession("http")
 
 	if ctx := request.Context(); ctx != nil {
 		qctx.Context = ctx
@@ -195,12 +237,10 @@ func (context *Context) Read() ([]byte, error) {
 	n, err := io.ReadFull(context.Request.Body, body)
 
 	if err == io.ErrUnexpectedEOF && context.Err() != nil {
-		err = context.Err()
-	}
-	if err == io.ErrUnexpectedEOF {
-		context.GetLog().Warnf("%s:%s: Request.ContentLength (%d) "+
+		context.GetLogger().Warnf("%s:%s: Request.ContentLength (%d) "+
 			"mismatch with actual body length (%d)", context.URI,
 			context.Request.RemoteAddr, n, context.Request.ContentLength)
+		err = context.Err()
 	}
 	if err == io.EOF {
 		err = nil
