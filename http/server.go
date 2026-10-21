@@ -16,7 +16,7 @@ import (
 const HealthCheckRoute = "health"
 const healthCheckURI = "/" + HealthCheckRoute
 
-// RESTServer is a struct for managing the configuration and start up of a
+// RESTServer is a struct for managing the configuration and start up of an
 // http/s server using the routing and controller logic in this package.
 type RESTServer[T ContextBase] struct {
 	Address    string
@@ -42,19 +42,19 @@ func (server *RESTServer[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	ctx := CreateContext(server.newContext(r.Context()), w, r, server.Router, nil)
 	if !ctx.HasError() {
-		switch ctx.Request.Method {
+		switch ctx.GetMethod() {
 		case http.MethodGet:
-			ctx.Route.Controller.Get(ctx)
+			ctx.GetRoute().Controller.Get(ctx)
 		case http.MethodPost:
-			ctx.Route.Controller.Post(ctx)
+			ctx.GetRoute().Controller.Post(ctx)
 		case http.MethodPut:
-			ctx.Route.Controller.Put(ctx)
+			ctx.GetRoute().Controller.Put(ctx)
 		case http.MethodPatch:
-			ctx.Route.Controller.Patch(ctx)
+			ctx.GetRoute().Controller.Patch(ctx)
 		case http.MethodDelete:
-			ctx.Route.Controller.Delete(ctx)
+			ctx.GetRoute().Controller.Delete(ctx)
 		case http.MethodOptions:
-			ctx.Route.Controller.Options(ctx)
+			ctx.GetRoute().Controller.Options(ctx)
 		default:
 			ctx.SetError(qerror.NewRestError(qerror.MethodNotAllowed, "", nil),
 				http.StatusMethodNotAllowed)
@@ -73,7 +73,7 @@ const (
 )
 
 // CompleteRequest generates output and completes the Request
-func (server *RESTServer[T]) CompleteRequest(start time.Time, context *Context) {
+func (server *RESTServer[T]) CompleteRequest(start time.Time, context *Context[T]) {
 	if healthCheckURI != context.URI {
 		defer func(start time.Time) {
 			log.Accessf("%s %s %s %s %d %dms %s %s %s",
@@ -112,7 +112,7 @@ func (server *RESTServer[T]) CompleteRequest(start time.Time, context *Context) 
 	_ = log.Warn(context.Write(b))
 }
 
-func (server *RESTServer[T]) completeRequestJSON(context *Context) {
+func (server *RESTServer[T]) completeRequestJSON(context *Context[T]) {
 	var (
 		b []byte
 		e error

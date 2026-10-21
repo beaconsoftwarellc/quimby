@@ -50,7 +50,7 @@ func CreateRouter[T ContextBase](rootController Controller[T]) Router[T] {
 func (router *Router[T]) AddController(controller Controller[T]) error {
 	var err error
 	for _, route := range controller.GetRoutes() {
-		err = router.AddRoute[T](route, controller)
+		err = router.AddRoute(route, controller)
 		if err != nil {
 			break
 		}
