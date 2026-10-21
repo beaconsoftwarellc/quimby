@@ -1,16 +1,18 @@
 package http
 
 import (
-	goctx "context"
+	"context"
 
 	"github.com/beaconsoftwarellc/gadget/v2/generator"
 	"github.com/beaconsoftwarellc/gadget/v2/log"
 	"github.com/beaconsoftwarellc/gadget/v2/stringutil"
 )
 
+//go:generate mockgen -package $GOPACKAGE -source $GOFILE -destination mock$GOFILE
+
 // ContextBase is an interface for base functionality that is common to all contexts
 type ContextBase interface {
-	goctx.Context
+	context.Context
 	// GetLogger for this context.
 	GetLogger() log.Logger
 	// SetLogger for this context as a sub-logger of the passed logger with the
@@ -27,12 +29,12 @@ type ContextBase interface {
 }
 
 // NewDefaultBase returns a default implementation of ContextBase
-func NewDefaultBase(ctx goctx.Context) ContextBase {
+func NewDefaultBase(ctx context.Context) ContextBase {
 	return &DefaultBase{Context: ctx}
 }
 
 type DefaultBase struct {
-	goctx.Context
+	context.Context
 	Session        string
 	logger         log.Logger
 	authentication Authentication
