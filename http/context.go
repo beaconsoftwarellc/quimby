@@ -1,7 +1,6 @@
 package http
 
 import (
-	goctx "context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/beaconsoftwarellc/gadget/v2/errors"
 	"github.com/beaconsoftwarellc/gadget/v2/generator"
@@ -19,58 +19,6 @@ import (
 	"github.com/beaconsoftwarellc/quimby/v2/http/urlencodedform"
 )
 
-// ContextBase is an interface for base functionality that is common to all contexts
-type ContextBase interface {
-	goctx.Context
-	// GetLogger for this context.
-	GetLogger() log.Logger
-	// SetLogger for this context as a sub-logger of the passed logger with the
-	// session off this context.
-	SetLogger(logger log.Logger) log.Logger
-	// GetSession for this context identified in log messages
-	GetSession() string
-	// SetSession for this context's log messages
-	SetSession(prefix generator.IDPrefix)
-}
-
-// NewDefaultBase returns a default implementation of ContextBase
-func NewDefaultBase() ContextBase {
-	return &DefaultBase{Context: goctx.Background()}
-}
-
-type DefaultBase struct {
-	goctx.Context
-	Session string
-	logger  log.Logger
-}
-
-func (c *DefaultBase) GetLogger() log.Logger {
-	if c.logger == nil {
-		c.logger = log.Global().New(c.Session)
-	}
-	return c.logger
-}
-
-func (c *DefaultBase) SetLogger(logger log.Logger) log.Logger {
-	if logger == nil {
-		logger = log.Global()
-	}
-	c.logger = logger.New(c.Session)
-	return c.logger
-}
-
-func (c *DefaultBase) GetSession() string {
-	return c.Session
-}
-
-func (c *DefaultBase) SetSession(prefix generator.IDPrefix) {
-	if stringutil.IsWhiteSpace(c.GetSession()) {
-		c.Session = generator.ID(prefix)
-	}
-}
-
-// Context serves as a structure that tracks the state of a given http Request
-// Response chain.
 type Context[T ContextBase] struct {
 	base          T
 	URIParameters map[string]string
@@ -78,7 +26,6 @@ type Context[T ContextBase] struct {
 	URI           string
 	URL           *url.URL
 	Method        string
-	Log           log.Logger
 
 	Request  *http.Request
 	Response http.ResponseWriter
@@ -88,8 +35,6 @@ type Context[T ContextBase] struct {
 	Authentication Authentication
 	Model          interface{}
 	Error          *qerror.RestError
-
-	Extended map[string]interface{}
 
 	Body     string
 	bodyRead bool
@@ -104,9 +49,21 @@ func (ctx *Context[T]) GetMethod() string {
 	return ctx.Method
 }
 
+func (ctx *Context[T]) GetRoute() *RouteNode[T] {
+	return ctx.Route
+}
+
 // GetUrl from the request on this context
 func (ctx *Context[T]) GetUrl() *url.URL {
 	return ctx.URL
+}
+
+func (ctx *Context[T]) GetRequest() *http.Request {
+	return ctx.Request
+}
+
+func (ctx *Context[T]) GetResponse() http.ResponseWriter {
+	return ctx.Response
 }
 
 // Status returns the HTTP status of the response
@@ -129,18 +86,8 @@ func (ctx *Context[T]) HasError() bool {
 	return nil != ctx.Error
 }
 
-// AddError adds an error detail to the context.
-// Note: The primary use case is to add a series of validation type errors
-func (ctx *Context[T]) AddError(err qerror.FieldError) {
-	if !ctx.HasError() {
-		ctx.SetError(qerror.NewRestError(qerror.ValidationError, "", nil),
-			http.StatusBadRequest)
-	}
-	ctx.Error.AddDetail(err)
-}
-
-// SetResponse sets the HTTP status and model to be rendered in the response write
-// Returns false if there is an Error on the context otherwise true
+// SetResponse and the HTTP status and result model, returns a boolean indicating
+// whether this [Context] is in an error state.
 func (ctx *Context[T]) SetResponse(model interface{}, status int) bool {
 	if ctx.HasError() {
 		return false
@@ -173,9 +120,8 @@ func CreateContext[T ContextBase](base T, writer http.ResponseWriter, request *h
 	router Router[T], logger log.Logger) *Context[T] {
 	var err error
 	qctx := &Context[T]{
-		base:     base,
-		Request:  request,
-		Extended: make(map[string]interface{}),
+		base:    base,
+		Request: request,
 	}
 	qctx.Response = writer
 	qctx.URL = request.URL
@@ -223,9 +169,6 @@ func CreateContext[T ContextBase](base T, writer http.ResponseWriter, request *h
 	return qctx
 }
 
-// InvalidCredentialsErrorMessage is returned when Credentials are invalid
-const InvalidCredentialsErrorMessage = "Invalid Credentials"
-
 // Read reads the entire body of the request and returns it as a slice of
 // bytes
 func (ctx *Context[T]) Read() ([]byte, error) {
@@ -235,7 +178,7 @@ func (ctx *Context[T]) Read() ([]byte, error) {
 	body := make([]byte, ctx.Request.ContentLength)
 	n, err := io.ReadFull(ctx.Request.Body, body)
 
-	if err == io.ErrUnexpectedEOF && ctx.base.Err() != nil {
+	if errors.Is(err, io.ErrUnexpectedEOF) && ctx.base.Err() != nil {
 		ctx.base.GetLogger().Warnf("%s:%s: Request.ContentLength (%d) "+
 			"mismatch with actual body length (%d)", ctx.URI,
 			ctx.Request.RemoteAddr, n, ctx.Request.ContentLength)
@@ -319,4 +262,45 @@ func (ctx *Context[T]) Write(bytes []byte) error {
 // ReadQueryParams converts URL Parameters into an Object
 func (ctx *Context[T]) ReadQueryParams(target interface{}) error {
 	return urlencodedform.URLValuesToObject(ctx.URLParameters, target)
+}
+
+// Context Implementation
+
+func (ctx *Context[T]) Deadline() (deadline time.Time, ok bool) {
+	return ctx.base.Deadline()
+}
+func (ctx *Context[T]) Done() <-chan struct{} {
+	return ctx.base.Done()
+}
+func (ctx *Context[T]) Err() error {
+	return ctx.base.Err()
+}
+func (ctx *Context[T]) Value(key any) any {
+	return ctx.base.Value(key)
+}
+
+// ContextBase Implementation
+
+func (ctx *Context[T]) GetLogger() log.Logger {
+	return ctx.base.GetLogger()
+}
+
+func (ctx *Context[T]) SetLogger(logger log.Logger) log.Logger {
+	return ctx.base.SetLogger(logger)
+}
+
+func (ctx *Context[T]) GetSession() string {
+	return ctx.base.GetSession()
+}
+
+func (ctx *Context[T]) SetSession(prefix generator.IDPrefix) {
+	ctx.base.SetSession(prefix)
+}
+
+func (ctx *Context[T]) GetAuthentication() Authentication {
+	return ctx.GetAuthentication()
+}
+
+func (ctx *Context[T]) SetAuthentication(auth Authentication) {
+	ctx.SetAuthentication(auth)
 }
