@@ -38,6 +38,8 @@ type Context[T ContextBase] struct {
 
 	Body     string
 	bodyRead bool
+
+	Extended map[string]interface{}
 }
 
 func (ctx *Context[T]) GetBase() T {
@@ -120,8 +122,9 @@ func CreateContext[T ContextBase](base T, writer http.ResponseWriter, request *h
 	router Router[T], logger log.Logger) *Context[T] {
 	var err error
 	qctx := &Context[T]{
-		base:    base,
-		Request: request,
+		base:     base,
+		Request:  request,
+		Extended: make(map[string]interface{}),
 	}
 	qctx.Response = writer
 	qctx.URL = request.URL
