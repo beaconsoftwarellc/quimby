@@ -132,9 +132,10 @@ func CreateContext[T ContextBase](base T, writer http.ResponseWriter, request *h
 	qctx.Method = request.Method
 	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
 
-	logger = qctx.base.SetLogger(logger)
 	// set the session on the base in case it has not been set yet.
 	qctx.base.SetSession("http")
+	// then set the logger
+	logger = qctx.base.SetLogger(logger)
 
 	if err != nil {
 		// take a hard stance on malformed URL's
