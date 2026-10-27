@@ -42,6 +42,10 @@ type Context[T ContextBase] struct {
 	Extended map[string]interface{}
 }
 
+func (ctx *Context[T]) SetBase(base T) {
+	ctx.base = base
+}
+
 func (ctx *Context[T]) GetBase() T {
 	return ctx.base
 }
