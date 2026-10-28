@@ -73,26 +73,29 @@ func (body FakeBody) Close() error {
 
 func TestSetError(t *testing.T) {
 	assert := assert.New(t)
-	context := Context{}
+	ctx := Context[ContextBase]{base: NewDefaultBase(context.Background())}
 	expectedError := qerror.NewRestError(qerror.MethodNotAllowed, "", nil)
-	context.SetError(expectedError, http.StatusMethodNotAllowed)
-	assert.Equal(expectedError, context.Error)
-	assert.Equal(http.StatusMethodNotAllowed, context.Status())
-	assert.True(context.HasError())
+	ctx.SetError(expectedError, http.StatusMethodNotAllowed)
+	assert.Equal(expectedError, ctx.Error)
+	assert.Equal(http.StatusMethodNotAllowed, ctx.Status())
+	assert.True(ctx.HasError())
 
-	assert.False(context.SetResponse("model", http.StatusOK))
-	assert.Equal(nil, context.Model)
-	assert.Equal(http.StatusMethodNotAllowed, context.Status())
-	assert.True(context.HasError())
+	assert.False(ctx.SetResponse("model", http.StatusOK))
+	assert.Equal(nil, ctx.Model)
+	assert.Equal(http.StatusMethodNotAllowed, ctx.Status())
+	assert.True(ctx.HasError())
 }
 
 func TestSetError_Logging(t *testing.T) {
 	assert := assert.New(t)
 	ctrl := gomock.NewController(t)
 	mockLogger := log.NewMockLogger(ctrl)
-	context := Context{
+	obj := NewDefaultBase(context.Background())
+	base := obj.(*DefaultBase)
+	base.logger = mockLogger
+	ctx := Context[ContextBase]{
+		base:   base,
 		Error:  nil,
-		Log:    mockLogger,
 		Method: http.MethodGet,
 		URL: &url.URL{
 			Scheme: "http",
@@ -103,70 +106,28 @@ func TestSetError_Logging(t *testing.T) {
 	// StatusInternalServerError logged
 	expectedError := qerror.NewRestError(qerror.MethodNotAllowed, "", nil)
 	mockLogger.EXPECT().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
-		"servicing request %s %s: %s", context.Method, context.URL, expectedError)
-	context.SetError(expectedError, http.StatusInternalServerError)
-	assert.Equal(expectedError, context.Error)
-	assert.Equal(http.StatusInternalServerError, context.Status())
-	assert.True(context.HasError())
+		"servicing request %s %s: %s", ctx.Method, ctx.URL, expectedError)
+	ctx.SetError(expectedError, http.StatusInternalServerError)
+	assert.Equal(expectedError, ctx.Error)
+	assert.Equal(http.StatusInternalServerError, ctx.Status())
+	assert.True(ctx.HasError())
 
 	// StatusInternalServerError for canceled context not logged
 	expectedError = qerror.NewRestError(qerror.Canceled, "", nil)
 	fmt.Println(expectedError.Error())
-	context.SetError(expectedError, http.StatusInternalServerError)
-	assert.Equal(expectedError, context.Error)
-	assert.Equal(http.StatusInternalServerError, context.Status())
-	assert.True(context.HasError())
-}
-
-func TestAddError(t *testing.T) {
-	assert := assert.New(t)
-	context := Context{}
-	fieldError := qerror.FieldError{Code: qerror.CannotBeBlank, Field: "name"}
-	context.AddError(fieldError)
-
-	expectedError := &qerror.RestError{Code: qerror.ValidationError}
-	expectedError.Details = append(expectedError.Details, fieldError)
-
-	assert.Equal(expectedError, context.Error)
-	assert.Equal(fieldError, context.Error.Details[0])
-	assert.True(context.HasError())
+	ctx.SetError(expectedError, http.StatusInternalServerError)
+	assert.Equal(expectedError, ctx.Error)
+	assert.Equal(http.StatusInternalServerError, ctx.Status())
+	assert.True(ctx.HasError())
 }
 
 func TestSetResponse(t *testing.T) {
 	assert := assert.New(t)
-	context := Context{}
-	assert.True(context.SetResponse("model", http.StatusOK))
-	assert.Equal("model", context.Model)
-	assert.Equal(http.StatusOK, context.Status())
-	assert.False(context.HasError())
-}
-
-func TestCreateContext(t *testing.T) {
-	assert := assert.New(t)
-
-	u, _ := url.Parse("http://127.0.0.1/")
-
-	w := testResponseWriter{}
-	r := &http.Request{
-		URL:        u,
-		RequestURI: u.RequestURI(),
-	}
-
-	key := struct{ Name string }{Name: "key"}
-	r = r.WithContext(context.WithValue(context.Background(), key, "value"))
-
-	c := NewTestController("HTTP Test")
-	c.Routes = append(c.Routes, "/")
-	router := CreateRouter(&c)
-	qCtx := CreateContext(&DefaultBase{}, w, r, router, nil)
-	qCtx.Extended["foo"] = "bar"
-
-	assert.False(qCtx.HasError())
-
-	assert.Implements((*context.Context)(nil), qCtx)
-	assert.NotNil(qCtx.Context)
-
-	assert.Equal(qCtx.Value(key), "value")
+	ctx := Context[ContextBase]{base: NewDefaultBase(context.Background())}
+	assert.True(ctx.SetResponse("model", http.StatusOK))
+	assert.Equal("model", ctx.Model)
+	assert.Equal(http.StatusOK, ctx.Status())
+	assert.False(ctx.HasError())
 }
 
 func TestCreateContextWithFailingAuth(t *testing.T) {
@@ -182,7 +143,7 @@ func TestCreateContextWithFailingAuth(t *testing.T) {
 	c := NewNoAuthTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(&DefaultBase{}, w, &r, router, nil)
+	context := CreateContext(NewDefaultBase(context.Background()), w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.AuthenticationFailed, context.Error.Code)
@@ -201,10 +162,10 @@ func TestCreateContextBadParameters(t *testing.T) {
 	c := NewTestController("HTTP Test")
 	c.Routes = append(c.Routes, "/")
 	router := CreateRouter(&c)
-	context := CreateContext(&DefaultBase{}, w, &r, router, nil)
+	ctx := CreateContext(NewDefaultBase(context.Background()), w, &r, router, nil)
 
-	assert.True(context.HasError())
-	assert.Equal(qerror.MalformedURL, context.Error.Code)
+	assert.True(ctx.HasError())
+	assert.Equal(qerror.MalformedURL, ctx.Error.Code)
 }
 
 func TestCreateContextBadRoute(t *testing.T) {
@@ -218,8 +179,8 @@ func TestCreateContextBadRoute(t *testing.T) {
 		RequestURI: u.RequestURI(),
 	}
 	c := NewTestController("HTTP Test")
-	router := CreateRouter(&c)
-	context := CreateContext(&DefaultBase{}, w, &r, router, nil)
+	router := CreateRouter[ContextBase](&c)
+	context := CreateContext(NewDefaultBase(context.Background()), w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.InvalidRoute, context.Error.Code)
@@ -240,7 +201,7 @@ func TestCreateContextBadTemplate(t *testing.T) {
 	c.Routes = append(c.Routes, "foo/{{id}}{{id2}}")
 	router := CreateRouter(&c)
 	assert.NoError(router.AddController(&c))
-	context := CreateContext(&DefaultBase{}, w, &r, router, nil)
+	context := CreateContext(NewDefaultBase(context.Background()), w, &r, router, nil)
 
 	assert.True(context.HasError())
 	assert.Equal(qerror.InvalidRoute, context.Error.Code)
@@ -262,7 +223,7 @@ func TestCreateContextQueryStringNotInParameters(t *testing.T) {
 	router := CreateRouter(&c)
 	assert.NoError(router.AddController(&c))
 
-	context := CreateContext(&DefaultBase{}, w, &r, router, nil)
+	context := CreateContext(NewDefaultBase(context.Background()), w, &r, router, nil)
 	assert.False(context.HasError())
 
 	actual, ok := context.URIParameters["id"]
@@ -281,10 +242,11 @@ func TestRead(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
-	body, err := context.Read()
+	body, err := ctx.Read()
 
 	assert.Equal("foo", string(body))
 	assert.Nil(err)
@@ -307,8 +269,8 @@ func TestRead_ContextErrorCase(t *testing.T) {
 		ContentLength: int64(len(b.Content) + 1),
 		Body:          b,
 	}
-	testContext := Context{
-		Context: ctx,
+	testContext := Context[*DefaultBase]{
+		base:    &DefaultBase{Context: ctx},
 		Request: &r,
 	}
 
@@ -320,10 +282,11 @@ func TestReadEmpty(t *testing.T) {
 	assert := assert.New(t)
 
 	r := http.Request{}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
-	body, err := context.Read()
+	body, err := ctx.Read()
 
 	assert.Empty(body)
 	assert.NoError(err)
@@ -347,11 +310,12 @@ func TestReadObject_withJSON(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(s, model)
 	assert.Nil(err)
@@ -372,11 +336,12 @@ func TestReadObject_withJSON_NoContentTypeHeader(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Error(err)
 }
@@ -392,29 +357,31 @@ func TestReadObject_withJSON_BadInput(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	body := &TestModel{}
 
-	assert.False(context.HasError())
+	assert.False(ctx.HasError())
 
-	err := context.ReadObject(body)
+	err := ctx.ReadObject(body)
 
 	assert.Error(err)
-	assert.True(context.HasError())
-	assert.Equal(http.StatusNotAcceptable, context.Status())
+	assert.True(ctx.HasError())
+	assert.Equal(http.StatusNotAcceptable, ctx.Status())
 }
 
 func TestReadObject_withJSON_Empty(t *testing.T) {
 	assert := assert.New(t)
 
 	r := http.Request{ContentLength: 0}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	s := ""
-	err := context.ReadObject(s)
+	err := ctx.ReadObject(s)
 
 	assert.Equal("", s)
 	assert.Error(err)
@@ -443,11 +410,12 @@ func TestReadObject_withForm(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -478,11 +446,12 @@ func TestReadObject_withForm_Casing(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel2{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -510,11 +479,12 @@ func TestReadObject_withForm_Arrays(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel3{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -542,11 +512,12 @@ func TestReadObject_withForm_IntegerValues(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel4{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -574,11 +545,12 @@ func TestReadObject_withForm_CSVValues(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel4{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -606,11 +578,12 @@ func TestReadObject_withForm_BoolValues(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel6{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -638,11 +611,12 @@ func TestReadObject_withForm_OnlyArrayValues(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel4{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -667,11 +641,12 @@ func TestReadObject_withForm_Unsuppported(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel5{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -698,8 +673,9 @@ func TestReadObject_withForm_EmptyQueryParam(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	context := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel{}
 	err := context.ReadObject(&model)
@@ -713,11 +689,12 @@ func TestWrite(t *testing.T) {
 
 	writerBody := make([]byte, 0, 20)
 	w := testResponseWriter{Body: &writerBody}
-	context := Context{
+	ctx := Context[ContextBase]{
+		base:     NewDefaultBase(context.Background()),
 		Response: w,
 	}
 
-	assert.NoError(context.Write([]byte("foo")))
+	assert.NoError(ctx.Write([]byte("foo")))
 	assert.Equal("foo", stringutil.NullTerminatedString(writerBody))
 }
 
@@ -744,11 +721,12 @@ func Test_context_valuesToObject(t *testing.T) {
 		ContentLength: int64(len(b.Content)),
 		Body:          b,
 	}
-	context := Context{
+	ctx := Context[ContextBase]{
 		Request: &r,
+		base:    NewDefaultBase(context.Background()),
 	}
 	model := TestModel{}
-	err := context.ReadObject(&model)
+	err := ctx.ReadObject(&model)
 
 	assert.Equal(expected, model)
 	assert.Nil(err)
@@ -774,7 +752,7 @@ func Test_context_GetObject_MultipartForm(t *testing.T) {
 	req.Header.Set("Content-Type", "multipart/form-data; boundary=xYzZY")
 	req.Header.Set("User-Agent", "Test")
 
-	context := &Context{Request: req}
+	context := &Context[ContextBase]{Request: req, base: NewDefaultBase(context.Background())}
 	target := &FormDataWithStructs{}
 	require.NoError(t, context.ReadObject(target))
 	require.NotNil(t, target.PtrTestStruct)
@@ -791,7 +769,7 @@ func Test_context_SetLocation(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
 	location := "http://example.com"
-	context := &Context{Request: request, Response: response}
+	context := &Context[ContextBase]{Request: request, Response: response, base: NewDefaultBase(context.Background())}
 	content := generator.ID("content")
 	assert.True(context.SetRedirect(content, location))
 	assert.Equal(http.StatusFound, context.responseStatus)
@@ -814,19 +792,19 @@ func Test_context_SetResponse(t *testing.T) {
 	assert := assert.New(t)
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	response := httptest.NewRecorder()
-	context := &Context{Request: request, Response: response}
+	ctx := &Context[ContextBase]{Request: request, Response: response, base: NewDefaultBase(context.Background())}
 	content := generator.ID("content")
 	status := http.StatusTeapot
-	assert.True(context.SetResponse(content, status))
-	assert.Equal(status, context.responseStatus)
-	assert.Equal(content, context.Model)
+	assert.True(ctx.SetResponse(content, status))
+	assert.Equal(status, ctx.responseStatus)
+	assert.Equal(content, ctx.Model)
 
 	// setting a different status should fail
-	assert.False(context.SetResponse("bar", http.StatusBadRequest))
-	assert.Equal(status, context.responseStatus)
-	assert.Equal(content, context.Model)
+	assert.False(ctx.SetResponse("bar", http.StatusBadRequest))
+	assert.Equal(status, ctx.responseStatus)
+	assert.Equal(content, ctx.Model)
 
-	assert.False(context.SetRedirect("bar", generator.String(10)))
-	assert.Equal(status, context.responseStatus)
-	assert.Equal(content, context.Model)
+	assert.False(ctx.SetRedirect("bar", generator.String(10)))
+	assert.Equal(status, ctx.responseStatus)
+	assert.Equal(content, ctx.Model)
 }

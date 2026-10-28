@@ -1,6 +1,7 @@
 package httptest
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 
@@ -13,15 +14,14 @@ import (
  ******************************************************/
 
 // CreateTestContext creates a Context that is appropriate for testing
-func CreateTestContext(c qhttp.Controller, r *http.Request) (context *qhttp.Context) {
+func CreateTestContext(c qhttp.Controller[qhttp.ContextBase], r *http.Request) *qhttp.Context[qhttp.ContextBase] {
 	w := httptest.NewRecorder()
-	router := qhttp.CreateRouter(c)
-	context = qhttp.CreateContext(qhttp.NewDefaultBase(), w, r, router, nil)
-	return context
+	router := qhttp.CreateRouter[qhttp.ContextBase](c)
+	return qhttp.CreateContext[qhttp.ContextBase](qhttp.NewDefaultBase(context.Background()), w, r, router, nil)
 }
 
 // TestController implements the Controller interface and nothing else
-type TestController struct {
-	controllers.MethodNotAllowedController
-	controllers.NoAuthenticationController
+type TestController[T qhttp.ContextBase] struct {
+	controllers.MethodNotAllowedController[T]
+	controllers.NoAuthenticationController[T]
 }

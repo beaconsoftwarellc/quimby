@@ -7,14 +7,14 @@ import (
 
 // NoAuthenticationController serves as a base for controllers that do not
 // implement authentication.
-type NoAuthenticationController struct {
-	authenticator http.Authenticator
+type NoAuthenticationController[T http.ContextBase] struct {
+	authenticator http.Authenticator[T]
 }
 
 // Authenticate always returns true
-func (controller NoAuthenticationController) Authenticate(context *http.Context) (http.Authentication, bool) {
+func (controller NoAuthenticationController[T]) Authenticate(context *http.Context[T]) (http.Authentication, bool) {
 	if nil == controller.authenticator {
-		controller.authenticator = authentication.NewAcceptAll()
+		controller.authenticator = authentication.NewAcceptAll[T]()
 	}
 	return controller.authenticator.Authenticate(context)
 }

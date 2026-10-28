@@ -1,7 +1,6 @@
 package http
 
 import (
-	goctx "context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/beaconsoftwarellc/gadget/v2/errors"
 	"github.com/beaconsoftwarellc/gadget/v2/generator"
@@ -19,158 +19,116 @@ import (
 	"github.com/beaconsoftwarellc/quimby/v2/http/urlencodedform"
 )
 
-// ContextBase is an interface for base functionality that is common to all contexts
-type ContextBase interface {
-	// GetLogger for this context.
-	GetLogger() log.Logger
-	// SetLogger for this context as a sub-logger of the passed logger with the
-	// session off this context.
-	SetLogger(logger log.Logger) log.Logger
-	// GetSession for this context identified in log messages
-	GetSession() string
-	// SetSession for this context's log messages
-	SetSession(prefix generator.IDPrefix)
-}
-
-// NewDefaultBase returns a default implementation of ContextBase
-func NewDefaultBase() ContextBase {
-	return &DefaultBase{}
-}
-
-type DefaultBase struct {
-	Session string
-	logger  log.Logger
-}
-
-func (c *DefaultBase) GetLogger() log.Logger {
-	if c.logger == nil {
-		c.logger = log.Global().New(c.Session)
-	}
-	return c.logger
-}
-
-func (c *DefaultBase) SetLogger(logger log.Logger) log.Logger {
-	if logger == nil {
-		logger = log.Global()
-	}
-	c.logger = logger.New(c.Session)
-	return c.logger
-}
-
-func (c *DefaultBase) GetSession() string {
-	return c.Session
-}
-
-func (c *DefaultBase) SetSession(prefix generator.IDPrefix) {
-	if stringutil.IsWhiteSpace(c.GetSession()) {
-		c.Session = generator.ID(prefix)
-	}
-}
-
-// Context serves as a structure that tracks the state of a given http Request
-// Response chain.
-type Context struct {
-	goctx.Context
-	ContextBase
+type Context[T ContextBase] struct {
+	base          T
 	URIParameters map[string]string
 	URLParameters url.Values
 	URI           string
 	URL           *url.URL
 	Method        string
-	Log           log.Logger
 
 	Request  *http.Request
 	Response http.ResponseWriter
-	Route    *RouteNode
+	Route    *RouteNode[T]
 
 	responseStatus int
 	Authentication Authentication
 	Model          interface{}
 	Error          *qerror.RestError
 
-	Extended map[string]interface{}
-
 	Body     string
 	bodyRead bool
+
+	Extended map[string]interface{}
+}
+
+func (ctx *Context[T]) SetBase(base T) {
+	ctx.base = base
+}
+
+func (ctx *Context[T]) GetBase() T {
+	return ctx.base
 }
 
 // GetMethod from the request on this context
-func (context *Context) GetMethod() string {
-	return context.Method
+func (ctx *Context[T]) GetMethod() string {
+	return ctx.Method
+}
+
+func (ctx *Context[T]) GetRoute() *RouteNode[T] {
+	return ctx.Route
 }
 
 // GetUrl from the request on this context
-func (context *Context) GetUrl() *url.URL {
-	return context.URL
+func (ctx *Context[T]) GetUrl() *url.URL {
+	return ctx.URL
+}
+
+func (ctx *Context[T]) GetRequest() *http.Request {
+	return ctx.Request
+}
+
+func (ctx *Context[T]) GetResponse() http.ResponseWriter {
+	return ctx.Response
 }
 
 // Status returns the HTTP status of the response
-func (context *Context) Status() int {
-	return context.responseStatus
+func (ctx *Context[T]) Status() int {
+	return ctx.responseStatus
 }
 
 // SetError sets the HTTP status of the response and the error to be returned
-func (context *Context) SetError(err *qerror.RestError, status int) {
-	context.responseStatus = status
-	context.Error = err
+func (ctx *Context[T]) SetError(err *qerror.RestError, status int) {
+	ctx.responseStatus = status
+	ctx.Error = err
 	if http.StatusInternalServerError == status && err.Code != qerror.Canceled {
-		context.GetLogger().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
-			"servicing request %s %s: %s", context.Method, context.URL, err)
+		ctx.GetBase().GetLogger().Errorf("[HTTP.CTX.100] InternalServerError encountered "+
+			"servicing request %s %s: %s", ctx.Method, ctx.URL, err)
 	}
 }
 
 // HasError checks if there is an Error set on the Context
-func (context *Context) HasError() bool {
-	return nil != context.Error
+func (ctx *Context[T]) HasError() bool {
+	return nil != ctx.Error
 }
 
-// AddError adds an error detail to the context.
-// Note: The primary use case is to add a series of validation type errors
-func (context *Context) AddError(err qerror.FieldError) {
-	if !context.HasError() {
-		context.SetError(qerror.NewRestError(qerror.ValidationError, "", nil),
-			http.StatusBadRequest)
-	}
-	context.Error.AddDetail(err)
-}
-
-// SetResponse sets the HTTP status and model to be rendered in the response write
-// Returns false if there is an Error on the context otherwise true
-func (context *Context) SetResponse(model interface{}, status int) bool {
-	if context.HasError() {
+// SetResponse and the HTTP status and result model, returns a boolean indicating
+// whether this [Context] is in an error state.
+func (ctx *Context[T]) SetResponse(model interface{}, status int) bool {
+	if ctx.HasError() {
 		return false
 	}
-	if context.responseStatus != 0 {
+	if ctx.responseStatus != 0 {
 		return false
 	}
-	context.responseStatus = status
-	context.Model = model
+	ctx.responseStatus = status
+	ctx.Model = model
 	return true
 }
 
-func (context *Context) SetRedirect(model interface{}, location string) bool {
-	if context.HasError() {
+func (ctx *Context[T]) SetRedirect(model interface{}, location string) bool {
+	if ctx.HasError() {
 		return false
 	}
-	if context.responseStatus != 0 {
+	if ctx.responseStatus != 0 {
 		return false
 	}
-	context.responseStatus = http.StatusFound
-	context.Response.Header().Set(locationHeader, location)
-	context.Model = model
+	ctx.responseStatus = http.StatusFound
+	ctx.Response.Header().Set(locationHeader, location)
+	ctx.Model = model
 	return true
 }
 
 // CreateContext initializes a Context from the passed Response and Request
-// pair, and router. The router is used for detemplating and populating the
+// pair, and router. The router is used for de-templating and populating the
 // URIParameters
-func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.Request,
-	router Router, logger log.Logger) *Context {
+func CreateContext[T ContextBase](base T, writer http.ResponseWriter, request *http.Request,
+	router Router[T], logger log.Logger) *Context[T] {
 	var err error
-	qctx := &Context{
-		ContextBase: base,
-		Request:     request,
-		Extended:    make(map[string]interface{}),
+	qctx := &Context[T]{
+		base:     base,
+		Request:  request,
+		Extended: make(map[string]interface{}),
 	}
 	qctx.Response = writer
 	qctx.URL = request.URL
@@ -178,15 +136,10 @@ func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.R
 	qctx.Method = request.Method
 	qctx.URLParameters, err = url.ParseQuery(request.URL.RawQuery)
 
-	logger = qctx.SetLogger(logger)
 	// set the session on the base in case it has not been set yet.
-	qctx.SetSession("http")
-
-	if ctx := request.Context(); ctx != nil {
-		qctx.Context = ctx
-	} else {
-		qctx.Context = goctx.Background()
-	}
+	qctx.base.SetSession("http")
+	// then set the logger
+	logger = qctx.base.SetLogger(logger)
 
 	if err != nil {
 		// take a hard stance on malformed URL's
@@ -224,92 +177,89 @@ func CreateContext(base ContextBase, writer http.ResponseWriter, request *http.R
 	return qctx
 }
 
-// InvalidCredentialsErrorMessage is returned when Credentials are invalid
-const InvalidCredentialsErrorMessage = "Invalid Credentials"
-
 // Read reads the entire body of the request and returns it as a slice of
 // bytes
-func (context *Context) Read() ([]byte, error) {
-	if context.bodyRead {
-		return []byte(context.Body), nil
+func (ctx *Context[T]) Read() ([]byte, error) {
+	if ctx.bodyRead {
+		return []byte(ctx.Body), nil
 	}
-	body := make([]byte, context.Request.ContentLength)
-	n, err := io.ReadFull(context.Request.Body, body)
+	body := make([]byte, ctx.Request.ContentLength)
+	n, err := io.ReadFull(ctx.Request.Body, body)
 
-	if err == io.ErrUnexpectedEOF && context.Err() != nil {
-		context.GetLogger().Warnf("%s:%s: Request.ContentLength (%d) "+
-			"mismatch with actual body length (%d)", context.URI,
-			context.Request.RemoteAddr, n, context.Request.ContentLength)
-		err = context.Err()
+	if errors.Is(err, io.ErrUnexpectedEOF) && ctx.base.Err() != nil {
+		ctx.base.GetLogger().Warnf("%s:%s: Request.ContentLength (%d) "+
+			"mismatch with actual body length (%d)", ctx.URI,
+			ctx.Request.RemoteAddr, n, ctx.Request.ContentLength)
+		err = ctx.base.Err()
 	}
 	if err == io.EOF {
 		err = nil
 	}
 
-	context.Body = string(body)
-	context.bodyRead = true
+	ctx.Body = string(body)
+	ctx.bodyRead = true
 	return body, err
 }
 
 // readJSON takes the JSON content type body of the Request and unmarshals a JSON object the
 // same type as the passed implementation of interface{}
-func (context *Context) readJSON(body []byte, target interface{}) error {
+func (ctx *Context[T]) readJSON(body []byte, target interface{}) error {
 	return json.Unmarshal(body, target)
 }
 
 // ReadObject reads the body of the Request and unmarshals an object the
 // same type as the passed implementation of interface{}
-func (context *Context) ReadObject(target interface{}) error {
+func (ctx *Context[T]) ReadObject(target interface{}) error {
 	var (
 		body        []byte
 		err         error
 		contentType string
 	)
 	contentType, _, err = mime.
-		ParseMediaType(context.Request.Header.Get(contentTypeHeader))
+		ParseMediaType(ctx.Request.Header.Get(contentTypeHeader))
 	if nil != err {
-		context.SetError(qerror.NewRestError(qerror.ValidationError,
+		ctx.SetError(qerror.NewRestError(qerror.ValidationError,
 			err.Error(), nil), http.StatusNotAcceptable)
 		return err
 	}
 	switch contentType {
 	case contentTypeForm:
-		body, err = context.Read()
+		body, err = ctx.Read()
 		if nil == err {
 			err = urlencodedform.Unmarshal(body, target)
 		}
 	case contentTypeMultiPartFormData:
 		fallthrough
 	case contentTypeMultiPartFormData1:
-		err = context.Request.
+		err = ctx.Request.
 			ParseMultipartForm(multipartform.MaxMemoryBytes)
 		if nil == err {
-			err = multipartform.Unmarshal(context.Request.MultipartForm, target)
+			err = multipartform.Unmarshal(ctx.Request.MultipartForm, target)
 		}
 	case contentTypeJSON:
-		body, err = context.Read()
+		body, err = ctx.Read()
 		if nil == err {
-			err = context.readJSON(body, target)
+			err = ctx.readJSON(body, target)
 		}
 	default:
 		err = errors.Newf("Unsupported contentType (%s) provided", contentType)
 	}
 	if nil != err {
-		context.SetError(qerror.NewRestError(qerror.ValidationError,
+		ctx.SetError(qerror.NewRestError(qerror.ValidationError,
 			err.Error(), nil), http.StatusNotAcceptable)
 	}
 	return err
 }
 
 // Write writes a string to the response body.
-func (context *Context) Write(bytes []byte) error {
+func (ctx *Context[T]) Write(bytes []byte) error {
 	var (
 		lastWrite int
 		err       error
 	)
 	for written := 0; written < len(bytes); written += lastWrite {
 		toWrite := bytes[written:]
-		lastWrite, err = context.Response.Write(toWrite)
+		lastWrite, err = ctx.Response.Write(toWrite)
 		if nil != err {
 			return err
 		}
@@ -318,6 +268,47 @@ func (context *Context) Write(bytes []byte) error {
 }
 
 // ReadQueryParams converts URL Parameters into an Object
-func (context *Context) ReadQueryParams(target interface{}) error {
-	return urlencodedform.URLValuesToObject(context.URLParameters, target)
+func (ctx *Context[T]) ReadQueryParams(target interface{}) error {
+	return urlencodedform.URLValuesToObject(ctx.URLParameters, target)
+}
+
+// Context Implementation
+
+func (ctx *Context[T]) Deadline() (deadline time.Time, ok bool) {
+	return ctx.base.Deadline()
+}
+func (ctx *Context[T]) Done() <-chan struct{} {
+	return ctx.base.Done()
+}
+func (ctx *Context[T]) Err() error {
+	return ctx.base.Err()
+}
+func (ctx *Context[T]) Value(key any) any {
+	return ctx.base.Value(key)
+}
+
+// ContextBase Implementation
+
+func (ctx *Context[T]) GetLogger() log.Logger {
+	return ctx.base.GetLogger()
+}
+
+func (ctx *Context[T]) SetLogger(logger log.Logger) log.Logger {
+	return ctx.base.SetLogger(logger)
+}
+
+func (ctx *Context[T]) GetSession() string {
+	return ctx.base.GetSession()
+}
+
+func (ctx *Context[T]) SetSession(prefix generator.IDPrefix) {
+	ctx.base.SetSession(prefix)
+}
+
+func (ctx *Context[T]) GetAuthentication() Authentication {
+	return ctx.GetAuthentication()
+}
+
+func (ctx *Context[T]) SetAuthentication(auth Authentication) {
+	ctx.SetAuthentication(auth)
 }
