@@ -33,8 +33,10 @@ func NewDefaultBase(ctx context.Context) ContextBase {
 	return &DefaultBase{Context: ctx}
 }
 
+// DefaultBase is a default implementation of ContextBase
 type DefaultBase struct {
 	context.Context
+	// Session for this context identified in log messages
 	Session        string
 	logger         log.Logger
 	authentication Authentication
