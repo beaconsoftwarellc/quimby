@@ -20,7 +20,7 @@ func NewTestController(ID string) TestController {
 	return TestController{ID: ID, Routes: []string{}}
 }
 
-func (controller *TestController) Authenticate(context *Context) (Authentication, bool) {
+func (controller *TestController) Authenticate(context *Context[ContextBase]) (Authentication, bool) {
 	return nil, true
 }
 
@@ -28,32 +28,32 @@ func (controller *TestController) GetRoutes() []string {
 	return controller.Routes
 }
 
-func (controller *TestController) Get(context *Context) {
+func (controller *TestController) Get(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodGet
 	context.SetResponse(http.MethodGet, http.StatusOK)
 }
 
-func (controller *TestController) Post(context *Context) {
+func (controller *TestController) Post(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodPost
 	context.SetResponse(http.MethodPost, http.StatusCreated)
 }
 
-func (controller *TestController) Put(context *Context) {
+func (controller *TestController) Put(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodPut
 	context.SetResponse(http.MethodPut, http.StatusAccepted)
 }
 
-func (controller *TestController) Patch(context *Context) {
+func (controller *TestController) Patch(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodPatch
 	context.SetResponse(http.MethodPatch, http.StatusAccepted)
 }
 
-func (controller *TestController) Delete(context *Context) {
+func (controller *TestController) Delete(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodDelete
 	context.SetResponse(http.MethodDelete, http.StatusNoContent)
 }
 
-func (controller *TestController) Options(context *Context) {
+func (controller *TestController) Options(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodOptions
 	context.SetResponse(http.MethodOptions, http.StatusOK)
 }
@@ -68,7 +68,7 @@ func NewNoAuthTestController(ID string) NoAuthTestController {
 	return NoAuthTestController{ID: ID, Routes: []string{}}
 }
 
-func (controller *NoAuthTestController) Authenticate(context *Context) (Authentication, bool) {
+func (controller *NoAuthTestController) Authenticate(context *Context[ContextBase]) (Authentication, bool) {
 	return nil, false
 }
 
@@ -76,32 +76,32 @@ func (controller *NoAuthTestController) GetRoutes() []string {
 	return controller.Routes
 }
 
-func (controller *NoAuthTestController) Get(context *Context) {
+func (controller *NoAuthTestController) Get(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodGet
 	context.SetResponse(http.MethodGet, http.StatusOK)
 }
 
-func (controller *NoAuthTestController) Post(context *Context) {
+func (controller *NoAuthTestController) Post(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodPost
 	context.SetResponse(http.MethodPost, http.StatusCreated)
 }
 
-func (controller *NoAuthTestController) Put(context *Context) {
+func (controller *NoAuthTestController) Put(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodPut
 	context.SetResponse(http.MethodPut, http.StatusAccepted)
 }
 
-func (controller *NoAuthTestController) Patch(context *Context) {
+func (controller *NoAuthTestController) Patch(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodPatch
 	context.SetResponse(http.MethodPatch, http.StatusAccepted)
 }
 
-func (controller *NoAuthTestController) Delete(context *Context) {
+func (controller *NoAuthTestController) Delete(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodDelete
 	context.SetResponse(http.MethodDelete, http.StatusNoContent)
 }
 
-func (controller *NoAuthTestController) Options(context *Context) {
+func (controller *NoAuthTestController) Options(context *Context[ContextBase]) {
 	controller.MethodCalled = http.MethodOptions
 	context.SetResponse(http.MethodOptions, http.StatusOK)
 }
@@ -111,7 +111,7 @@ func (controller *NoAuthTestController) Options(context *Context) {
  ******************************************************/
 
 func TestBadRoute(t *testing.T) {
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	controller := &TestController{ID: "foo", Routes: []string{}}
 	err := r.AddRoute("/route", controller)
 	if err == nil {
@@ -129,7 +129,7 @@ func TestBadRoute(t *testing.T) {
 
 func TestAddRoute(t *testing.T) {
 	assert := assert.New(t)
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	expectedID := "controller1"
 	controllerRoute := "controllerRoute1"
 	expectedController := &TestController{ID: expectedID,
@@ -144,7 +144,7 @@ func TestAddRoute(t *testing.T) {
 	if routeAdded {
 		t.Error("Controller's Route should not have been added.")
 	}
-	var actualNode *RouteNode
+	var actualNode *RouteNode[ContextBase]
 	// We expect the passed route to have been added
 	actualNode, routeAdded = r.RouteTree.SubRoutes[expected]
 	if !routeAdded {
@@ -164,7 +164,7 @@ func TestAddRoute(t *testing.T) {
 
 func TestAddControllerAtExistingRoute(t *testing.T) {
 	controller := &TestController{ID: "ID", Routes: []string{}}
-	router := CreateRouter(nil)
+	router := CreateRouter[ContextBase](nil)
 	route := "route"
 	err := router.AddRoute(route, controller)
 	if err != nil {
@@ -178,7 +178,7 @@ func TestAddControllerAtExistingRoute(t *testing.T) {
 
 func TestAddControllerAtExistingRouteComplex(t *testing.T) {
 	controller := &TestController{ID: "ID", Routes: []string{}}
-	router := CreateRouter(nil)
+	router := CreateRouter[ContextBase](nil)
 	route := "route/{{id}}/something"
 	err := router.AddRoute(route, controller)
 	if err != nil {
@@ -191,7 +191,7 @@ func TestAddControllerAtExistingRouteComplex(t *testing.T) {
 }
 
 func TestAddEmptyRoute(t *testing.T) {
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	controller := &TestController{ID: "foo", Routes: []string{}}
 	err := r.AddRoute("", controller)
 
@@ -205,7 +205,7 @@ func TestAddEmptyRoute(t *testing.T) {
 	}
 }
 
-func testRoute(router Router, route string, expectedID string, t *testing.T) {
+func testRoute(router Router[ContextBase], route string, expectedID string, t *testing.T) {
 	actual, err := router.FindRouteForPath(route)
 	if err != nil {
 		t.Error(err)
@@ -232,7 +232,7 @@ func testRoute(router Router, route string, expectedID string, t *testing.T) {
 
 func TestAddController(t *testing.T) {
 	assert := assert.New(t)
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	expected := "TestAddController"
 	route1 := "bar/baz"
 	route2 := "foo/bar"
@@ -243,7 +243,7 @@ func TestAddController(t *testing.T) {
 }
 
 func TestFindControllerSingleRouteExact(t *testing.T) {
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	expected := "controllerID"
 	controller := &TestController{ID: expected, Routes: []string{}}
 	route := "route/something"
@@ -256,7 +256,7 @@ func TestFindControllerSingleRouteExact(t *testing.T) {
 }
 
 func TestFindControllerSingleRouteWild(t *testing.T) {
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	expected := "controllerID"
 	controller := &TestController{ID: expected, Routes: []string{}}
 	route := "foo/{{baz}}/bar"
@@ -286,7 +286,7 @@ func TestFindControllerSingleRouteWild(t *testing.T) {
 }
 
 func TestFindControllerSinglePathExactOverWild(t *testing.T) {
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	expected := "TestFindControllerSinglePathExactOverWild"
 	controller := &TestController{ID: expected, Routes: []string{}}
 	controller2 := &TestController{ID: "bad", Routes: []string{}}
@@ -324,7 +324,7 @@ func TestFindControllerSinglePathExactOverWild(t *testing.T) {
 
 func TestFindControllerNoRoute(t *testing.T) {
 	assert := assert.New(t)
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	controller := &TestController{ID: "TestFindControllerNoRoute",
 		Routes: []string{}}
 	assert.NoError(r.AddRoute("route/*/something", controller))
@@ -337,7 +337,7 @@ func TestFindControllerNoRoute(t *testing.T) {
 
 func TestFindControllerNoRoutePartialMatch(t *testing.T) {
 	assert := assert.New(t)
-	r := CreateRouter(nil)
+	r := CreateRouter[ContextBase](nil)
 	controller := &TestController{ID: "TestFindControllerNoRoute",
 		Routes: []string{}}
 	assert.NoError(r.AddRoute("route/*/something", controller))

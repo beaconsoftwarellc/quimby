@@ -8,18 +8,19 @@ import (
 
 const Reject = "reject"
 
-func NewRejectAll() http.Authenticator {
-	return &rejectAllAuthenticator{}
+func NewRejectAll[T http.ContextBase]() http.Authenticator[T] {
+	return &rejectAllAuthenticator[T]{}
 }
 
-type rejectAllAuthenticator struct{}
+type rejectAllAuthenticator[T http.ContextBase] struct{}
 
-func (r *rejectAllAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
+func (r *rejectAllAuthenticator[T]) SetUserAuthentication(context *http.Context[T],
+	_ string) (http.Authentication, bool) {
 	context.Authentication = &rejectionAuthentication{}
 	return context.Authentication, context.Authentication.GetValidity()
 }
 
-func (r *rejectAllAuthenticator) Authenticate(*http.Context) (http.Authentication, bool) {
+func (r *rejectAllAuthenticator[T]) Authenticate(*http.Context[T]) (http.Authentication, bool) {
 	return &rejectionAuthentication{}, false
 }
 

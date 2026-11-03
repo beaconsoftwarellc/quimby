@@ -12,18 +12,19 @@ const (
 )
 
 // NewAcceptAll authenticator that will treat all incoming requests as authenticated
-func NewAcceptAll() http.Authenticator {
-	return &acceptAllAuthenticator{}
+func NewAcceptAll[T http.ContextBase]() http.Authenticator[T] {
+	return &acceptAllAuthenticator[T]{}
 }
 
-type acceptAllAuthenticator struct{}
+type acceptAllAuthenticator[T http.ContextBase] struct{}
 
-func (r *acceptAllAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
+func (r *acceptAllAuthenticator[T]) SetUserAuthentication(context *http.Context[T], userID string) (
+	http.Authentication, bool) {
 	context.Authentication = &acceptAuthentication{userID: userID}
 	return context.Authentication, context.Authentication.GetValidity()
 }
 
-func (r *acceptAllAuthenticator) Authenticate(context *http.Context) (http.Authentication, bool) {
+func (r *acceptAllAuthenticator[T]) Authenticate(context *http.Context[T]) (http.Authentication, bool) {
 	context.Authentication = &acceptAuthentication{}
 	return context.Authentication, context.Authentication.GetValidity()
 }

@@ -1,6 +1,7 @@
 package http
 
 import (
+	goctx "context"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -82,7 +83,7 @@ func TestServeHTTP(t *testing.T) {
 
 	controller := NewTestController("HTTP Test")
 	controller.Routes = append(controller.Routes, "route")
-	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
+	server := CreateRESTServer[ContextBase](":8080", &controller, NewDefaultBase)
 	assert.NoError(server.Router.AddController(&controller))
 
 	methods := []string{
@@ -114,7 +115,7 @@ func TestCompleteRequestResponse(t *testing.T) {
 	controller := NewTestController("HTTP Test")
 	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
 
-	context := Context{Request: r, Response: w}
+	context := Context[ContextBase]{Request: r, Response: w}
 	context.SetResponse("OK", http.StatusOK)
 	server.CompleteRequest(time.Now(), &context)
 	assert.Equal("OK", stringutil.NullTerminatedString(writerBody))
@@ -133,7 +134,7 @@ func TestCompleteRequestError(t *testing.T) {
 
 	controller := NewTestController("HTTP Test")
 	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
-	context := Context{Request: r, Response: w}
+	context := Context[ContextBase]{Request: r, Response: w}
 	err := qerror.NewRestError("testing", "", nil)
 	context.SetError(err, http.StatusTeapot)
 	server.CompleteRequest(time.Now(), &context)
@@ -154,7 +155,7 @@ func TestCompleteRequestErrorCannotMarshall(t *testing.T) {
 
 	controller := NewTestController("HTTP Test")
 	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
-	context := Context{Request: r, Response: w, ContextBase: NewDefaultBase()}
+	context := Context[ContextBase]{Request: r, Response: w, base: NewDefaultBase(goctx.Background())}
 	exp, _ := json.Marshal(qerror.NewRestError("system-error", "", nil))
 
 	err := qerror.NewRestError("testing", "", nil)
@@ -177,7 +178,7 @@ func TestCompleteRequestResponseCannotMarshal(t *testing.T) {
 
 	controller := NewTestController("HTTP Test")
 	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
-	context := Context{Request: r, Response: w, ContextBase: NewDefaultBase()}
+	context := Context[ContextBase]{Request: r, Response: w, base: NewDefaultBase(goctx.Background())}
 	exp, _ := json.Marshal(qerror.NewRestError("system-error", "", nil))
 	context.SetResponse(math.Inf(1), http.StatusAlreadyReported)
 	server.CompleteRequest(time.Now(), &context)

@@ -14,32 +14,32 @@ var (
 )
 
 // Router is the main entry point for the Quimby ReST API server.
-type Router struct {
-	// Routes All routes currently mapped by the router.
-	RouteTree        *RouteNode
+type Router[T ContextBase] struct {
+	// Routes all routes currently mapped by the router.
+	RouteTree        *RouteNode[T]
 	RegisteredRoutes []string
 }
 
 // RouteNode serves as a node in the parse tree for parsing incoming routes.
-type RouteNode struct {
+type RouteNode[T ContextBase] struct {
 	// The word value assigned to this node.
 	Value string
 	// Any subroutes nested below this node.
-	SubRoutes map[string]*RouteNode
-	// The route template that was mapped to this node (if termnial).
+	SubRoutes map[string]*RouteNode[T]
+	// The route template that was mapped to this node (if terminal).
 	TemplateRoute string
 	// The Controller for this node if terminal.
-	Controller Controller
+	Controller Controller[T]
 }
 
-func createNode(value string) *RouteNode {
-	return &RouteNode{Value: value, SubRoutes: make(map[string]*RouteNode)}
+func createNode[T ContextBase](value string) *RouteNode[T] {
+	return &RouteNode[T]{Value: value, SubRoutes: make(map[string]*RouteNode[T])}
 }
 
 // CreateRouter initializes and returns a new instance of Router.
-func CreateRouter(rootController Controller) Router {
-	router := Router{}
-	router.RouteTree = createNode(Slash)
+func CreateRouter[T ContextBase](rootController Controller[T]) Router[T] {
+	router := Router[T]{}
+	router.RouteTree = createNode[T](Slash)
 	router.RouteTree.TemplateRoute = Slash
 	router.RouteTree.Controller = rootController
 	return router
@@ -47,7 +47,7 @@ func CreateRouter(rootController Controller) Router {
 
 // AddController adds a the passed controller on the routes returned by the
 // controllers GetRoutes method.
-func (router *Router) AddController(controller Controller) error {
+func (router *Router[T]) AddController(controller Controller[T]) error {
 	var err error
 	for _, route := range controller.GetRoutes() {
 		err = router.AddRoute(route, controller)
@@ -58,7 +58,7 @@ func (router *Router) AddController(controller Controller) error {
 	return err
 }
 
-func (node *RouteNode) insertRoute(route []string) *RouteNode {
+func (node *RouteNode[T]) insertRoute(route []string) *RouteNode[T] {
 	pathPart := route[0]
 	if strings.HasPrefix(pathPart, stringutil.DOpen) {
 		pathPart = WildCard
@@ -68,7 +68,7 @@ func (node *RouteNode) insertRoute(route []string) *RouteNode {
 	v, ok := node.SubRoutes[pathPart]
 	if !ok {
 		// no node yet so create a new one
-		v = createNode(pathPart)
+		v = createNode[T](pathPart)
 		node.SubRoutes[v.Value] = v
 	}
 
@@ -82,9 +82,9 @@ func (node *RouteNode) insertRoute(route []string) *RouteNode {
 
 // AddRoute adds a Controller at the specified route. This will not add
 // the routes defined on the controller. Just the route passed.
-func (router *Router) AddRoute(route string, controller Controller) error {
+func (router *Router[T]) AddRoute(route string, controller Controller[T]) error {
 	var err error
-	var node *RouteNode
+	var node *RouteNode[T]
 	// Trim off any leading or trailing slashes
 	route = strings.TrimSpace(route)
 	splitRoute := strings.Split(route, Slash)
@@ -106,8 +106,8 @@ func (router *Router) AddRoute(route string, controller Controller) error {
 	return err
 }
 
-func (node *RouteNode) find(path []string) *RouteNode {
-	var foundNode *RouteNode
+func (node *RouteNode[T]) find(path []string) *RouteNode[T] {
+	var foundNode *RouteNode[T]
 	if len(path) > 0 {
 		subnode, ok := node.SubRoutes[path[0]]
 		// if there is no sub route below this node that matches the head
@@ -128,9 +128,9 @@ func (node *RouteNode) find(path []string) *RouteNode {
 // FindRouteForPath returns the controller that is currently assigned to
 // the passed route. If no controller's route matches the passed path an error
 // will be returned.
-func (router *Router) FindRouteForPath(path string) (*RouteNode, error) {
+func (router *Router[T]) FindRouteForPath(path string) (*RouteNode[T], error) {
 	var err error
-	var node *RouteNode
+	var node *RouteNode[T]
 
 	splitPath := strings.Split(path, Slash)
 

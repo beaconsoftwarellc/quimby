@@ -9,9 +9,9 @@ import (
 
 // HealthCheckController responds to Get requests with a JSON object representing
 // the status of the server.
-type HealthCheckController struct {
-	MethodNotAllowedController
-	NoAuthenticationController
+type HealthCheckController[T http.ContextBase] struct {
+	MethodNotAllowedController[T]
+	NoAuthenticationController[T]
 }
 
 // HealthCheckResource is returned by the HealthCheckController for conveying
@@ -22,12 +22,12 @@ type HealthCheckResource struct {
 }
 
 // GetRoutes only responds on the 'health' resource endpoint.
-func (controller *HealthCheckController) GetRoutes() []string {
+func (controller *HealthCheckController[T]) GetRoutes() []string {
 	return []string{http.HealthCheckRoute}
 }
 
 // Get returns a new instance of the HealthCheckResource
-func (controller *HealthCheckController) Get(context *http.Context) {
+func (controller *HealthCheckController[T]) Get(context *http.Context[T]) {
 	model := HealthCheckResource{Timestamp: time.Now().UTC().Format(time.RFC822),
 		Status: "OK"}
 	context.SetResponse(model, nhttp.StatusOK)

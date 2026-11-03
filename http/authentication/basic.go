@@ -21,8 +21,8 @@ type GetHashAndSalt func(user string) (hash string, salt string, ok bool)
 // The information should be included in the 'Authorization' header in the following format:
 // Authorization: Basic QWxhZGRpbjpPcGVuU2VzYW1l
 // where 'QWxhZGRpbjpPcGVuU2VzYW1l' is the base64 encoded string 'Aladdin:OpenSesame'
-func NewBasic(get GetHashAndSalt, authenticationTTL time.Duration) http.Authenticator {
-	return &basicAuthenticator{
+func NewBasic[T http.ContextBase](get GetHashAndSalt, authenticationTTL time.Duration) http.Authenticator[T] {
+	return &basicAuthenticator[T]{
 		get: get,
 		ttl: authenticationTTL,
 	}
@@ -34,12 +34,12 @@ func NewBasicHashAndSalt(password string) (hash, salt string) {
 	return crypto.HashAndSalt(password)
 }
 
-type basicAuthenticator struct {
+type basicAuthenticator[T http.ContextBase] struct {
 	get GetHashAndSalt
 	ttl time.Duration
 }
 
-func (s *basicAuthenticator) Authenticate(context *http.Context) (http.Authentication, bool) {
+func (s *basicAuthenticator[T]) Authenticate(context *http.Context[T]) (http.Authentication, bool) {
 	basicAuthentication := &basicAuthentication{
 		created: time.Now(),
 		expiry:  time.Now().Add(s.ttl),
@@ -60,7 +60,7 @@ func (s *basicAuthenticator) Authenticate(context *http.Context) (http.Authentic
 	return basicAuthentication, basicAuthentication.GetValidity()
 }
 
-func (s *basicAuthenticator) SetUserAuthentication(context *http.Context, userID string) (http.Authentication, bool) {
+func (s *basicAuthenticator[T]) SetUserAuthentication(context *http.Context[T], userID string) (http.Authentication, bool) {
 	context.Authentication = &basicAuthentication{created: time.Now(), expiry: time.Now().Add(s.ttl), valid: true, user: userID}
 	return context.Authentication, context.Authentication.GetValidity()
 }

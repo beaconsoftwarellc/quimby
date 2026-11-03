@@ -12,10 +12,10 @@ type Authentication interface {
 }
 
 // Authenticator is responsible for the initialization of an [Authentication] from an http context.
-type Authenticator interface {
+type Authenticator[T ContextBase] interface {
 	// Authenticate the passed context and provide the authentication and bool indicating whether the
 	// context is authenticated
-	Authenticate(context *Context) (Authentication, bool)
+	Authenticate(*Context[T]) (Authentication, bool)
 	// SetUserAuthentication on the passed context for the passed user ID.
-	SetUserAuthentication(context *Context, userID string) (Authentication, bool)
+	SetUserAuthentication(context *Context[T], userID string) (Authentication, bool)
 }

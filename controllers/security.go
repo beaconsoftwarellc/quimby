@@ -5,18 +5,18 @@ import (
 )
 
 // BasicAuthValidator handles verification of Username/Password
-type BasicAuthValidator interface {
-	Validate(context *http.Context, username, password string) bool
+type BasicAuthValidator[T http.ContextBase] interface {
+	Validate(context *http.Context[T], username, password string) bool
 }
 
 // BasicAuthenticatedController handles operations on the Registration Collection
-type BasicAuthenticatedController struct {
-	MethodNotAllowedController
-	Validator BasicAuthValidator
+type BasicAuthenticatedController[T http.ContextBase] struct {
+	MethodNotAllowedController[T]
+	Validator BasicAuthValidator[T]
 }
 
 // Authenticate verifies that a valid Registration header was provided
-func (controller *BasicAuthenticatedController) Authenticate(context *http.Context) bool {
+func (controller *BasicAuthenticatedController[T]) Authenticate(context *http.Context[T]) bool {
 	context.Response.Header().Set("WWW-Authenticate", `Basic realm="Basic Auth Required"`)
 	username, password, ok := context.Request.BasicAuth()
 	if !ok {
@@ -26,17 +26,17 @@ func (controller *BasicAuthenticatedController) Authenticate(context *http.Conte
 }
 
 // HeaderAuthValidator handles verification by checking header values
-type HeaderAuthValidator interface {
-	Validate(context *http.Context) bool
+type HeaderAuthValidator[T http.ContextBase] interface {
+	Validate(context *http.Context[T]) bool
 }
 
 // HeaderAuthenticatedController handles operations on the Registration Collection
-type HeaderAuthenticatedController struct {
-	MethodNotAllowedController
-	validator HeaderAuthValidator
+type HeaderAuthenticatedController[T http.ContextBase] struct {
+	MethodNotAllowedController[T]
+	validator HeaderAuthValidator[T]
 }
 
 // Authenticate verifies that a valid Registration header was provided
-func (controller *HeaderAuthenticatedController) Authenticate(context *http.Context) bool {
+func (controller *HeaderAuthenticatedController[T]) Authenticate(context *http.Context[T]) bool {
 	return controller.validator.Validate(context)
 }
