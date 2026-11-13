@@ -115,7 +115,10 @@ func TestCompleteRequestResponse(t *testing.T) {
 	controller := NewTestController("HTTP Test")
 	server := CreateRESTServer(":8080", &controller, NewDefaultBase)
 
-	context := Context[ContextBase]{Request: r, Response: w}
+	context := Context[ContextBase]{
+		Request: r, Response: w,
+	}
+	context.SetBase(NewDefaultBase(goctx.Background()))
 	context.SetResponse("OK", http.StatusOK)
 	server.CompleteRequest(time.Now(), &context)
 	assert.Equal("OK", stringutil.NullTerminatedString(writerBody))

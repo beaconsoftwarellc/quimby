@@ -73,43 +73,43 @@ const (
 )
 
 // CompleteRequest generates output and completes the Request
-func (server *RESTServer[T]) CompleteRequest(start time.Time, context *Context[T]) {
-	if healthCheckURI != context.URI {
+func (server *RESTServer[T]) CompleteRequest(start time.Time, ctx *Context[T]) {
+	if healthCheckURI != ctx.URI {
 		defer func(start time.Time) {
-			log.Accessf("%s %s %s %s %d %dms %s %s %s",
-				context.Request.RemoteAddr,
-				context.Request.Method,
-				context.Request.Proto,
-				context.Request.URL.String(),
-				context.Status(),
+			ctx.GetLogger().Accessf("%s %s %s %s %d %dms %s %s %s",
+				ctx.Request.RemoteAddr,
+				ctx.Request.Method,
+				ctx.Request.Proto,
+				ctx.Request.URL.String(),
+				ctx.Status(),
 				time.Since(start).Milliseconds(),
-				context.URLParameters.Encode(),
-				context.Request.UserAgent(),
-				context.Request.Referer(),
+				ctx.URLParameters.Encode(),
+				ctx.Request.UserAgent(),
+				ctx.Request.Referer(),
 			)
 		}(start)
 	}
 
-	contentType := context.Response.Header().Get(contentTypeHeader)
+	contentType := ctx.Response.Header().Get(contentTypeHeader)
 	if stringutil.IsWhiteSpace(contentType) {
 		contentType = contentTypeJSON
-		context.Response.Header().Set(contentTypeHeader, contentType)
+		ctx.Response.Header().Set(contentTypeHeader, contentType)
 	}
 
 	if contentTypeJSON == contentType {
-		server.completeRequestJSON(context)
+		server.completeRequestJSON(ctx)
 		return
 	}
 
 	var b []byte
-	if context.HasError() {
-		b = []byte(context.Error.Message)
-	} else if nil != context.Model {
-		b = []byte(fmt.Sprintf("%v", context.Model))
+	if ctx.HasError() {
+		b = []byte(ctx.Error.Message)
+	} else if nil != ctx.Model {
+		b = []byte(fmt.Sprintf("%v", ctx.Model))
 	}
 
-	context.Response.WriteHeader(context.responseStatus)
-	_ = log.Warn(context.Write(b))
+	ctx.Response.WriteHeader(ctx.responseStatus)
+	_ = log.Warn(ctx.Write(b))
 }
 
 func (server *RESTServer[T]) completeRequestJSON(context *Context[T]) {
