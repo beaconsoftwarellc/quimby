@@ -306,9 +306,9 @@ func (ctx *Context[T]) SetSession(prefix generator.IDPrefix) {
 }
 
 func (ctx *Context[T]) GetAuthentication() Authentication {
-	return ctx.GetAuthentication()
+	return ctx.base.GetAuthentication()
 }
 
 func (ctx *Context[T]) SetAuthentication(auth Authentication) {
-	ctx.SetAuthentication(auth)
+	ctx.base.SetAuthentication(auth)
 }
